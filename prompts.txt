@@ -1,0 +1,1700 @@
+build the complete code for P03. Follow all specifications exactly. 
+Use Gujarati strings from AppStrings class. All database writes must use transactions.
+
+
+MASTER PROMPT:-
+{
+  "project": {
+    "name": "Kirana Shop Management System",
+    "type": "Flutter Desktop + Android Application",
+    "version": "2.0.0",
+    "description": "Local offline grocery shop management for non-technical Gujarati-speaking shop owners"
+  },
+ 
+  "tech_stack": {
+    "framework": "Flutter 3.x (Dart)",
+    "database": "SQLCipher via sqflite_sqlcipher package — AES-256 full database encryption",
+    "state_management": "Riverpod (flutter_riverpod ^2.4.0)",
+    "target_platforms": ["Windows", "Android"],
+    "credential_storage": "flutter_secure_storage — PINs never stored in SQLite"
+  },
+ 
+  "all_packages": {
+    "sqflite_sqlcipher": "^2.2.0",
+    "path": "^1.8.3",
+    "flutter_riverpod": "^2.4.0",
+    "google_fonts": "^6.1.0",
+    "intl": "^0.18.1",
+    "pdf": "^3.10.4",
+    "printing": "^5.11.0",
+    "blue_thermal_printer": "^1.1.0",
+    "flutter_usb_serial": "^0.3.2",
+    "url_launcher": "^6.2.1",
+    "shared_preferences": "^2.2.2",
+    "flutter_secure_storage": "^9.0.0",
+    "fl_chart": "^0.65.0",
+    "flutter_local_notifications": "^16.1.0",
+    "path_provider": "^2.1.1",
+    "share_plus": "^7.2.1",
+    "string_similarity": "^2.0.0"
+  },
+ 
+  "user_roles": {
+    "superadmin": {
+      "pin_digits": 6,
+      "appbar_color": "#4A148C",
+      "access": "everything including module manager and user manager"
+    },
+    "admin": {
+      "pin_digits": 4,
+      "appbar_color": "#1A237E",
+      "access": "billing, stock, udhaar, reports, expenses, settings"
+    },
+    "employee": {
+      "pin_digits": 4,
+      "appbar_color": "#006064",
+      "access": "billing screen and stock view only"
+    }
+  },
+ 
+  "language_specifications": {
+    "primary_display_language": "Gujarati",
+    "secondary_language": "English for dev labels only",
+    "font": "Noto Sans Gujarati via google_fonts package",
+    "text_direction": "LTR",
+    "number_format": "Indian system — 1,00,000",
+    "currency_symbol": "₹",
+    "date_format": "DD/MM/YYYY",
+    "all_UI_labels_in": "Gujarati",
+    "all_error_messages_in": "Gujarati",
+    "all_alerts_in": "Gujarati",
+    "transliteration": "Local JSON dictionary maps phonetic English to Gujarati — tuverdal→તુવેરદાળ",
+    "thermal_print_language": "Gujarati rendered as image via RepaintBoundary then sent as ESC/POS image"
+  },
+ 
+  "user_specifications": {
+    "primary_user": "Non-technical Gujarati-speaking shop owner",
+    "ui_principles": [
+      "Maximum 3 taps for any action",
+      "Minimum 48dp touch targets",
+      "No technical jargon — plain Gujarati only",
+      "Color coded: green=good, orange=warning, red=alert",
+      "Icons alongside every text label",
+      "Numeric input via numpad only",
+      "Confirmation dialog before every delete or irreversible action in Gujarati",
+      "One task per screen — never cram two actions on same screen",
+      "Bottom navigation on Android, NavigationRail on Windows"
+    ],
+    "screen_sizes": {
+      "android": "360dp to 420dp width",
+      "windows": "1280x720 minimum"
+    }
+  },
+ 
+  "database_specifications": {
+    "engine": "SQLCipher (AES-256 encrypted SQLite)",
+    "package": "sqflite_sqlcipher ^2.2.0",
+    "key_derivation": "Admin PIN → SHA-256 → database encryption key",
+    "transaction_policy": "All multi-table writes inside single database transaction — if any step fails everything rolls back",
+    "schema_version": 1
+  },
+ 
+  "color_system": {
+    "primary": "#1B5E20",
+    "primary_light": "#2E7D32",
+    "primary_surface": "#E8F5E9",
+    "secondary": "#E65100",
+    "secondary_light": "#F57F17",
+    "secondary_surface": "#FFF3E0",
+    "surface": "#FFFFFF",
+    "surface_variant": "#F8FAF8",
+    "background": "#F1F4F1",
+    "error": "#B71C1C",
+    "error_surface": "#FFEBEE",
+    "success": "#2E7D32",
+    "warning": "#F57F00",
+    "warning_surface": "#FFF8E1",
+    "udhaar_red": "#C62828",
+    "udhaar_surface": "#FFCDD2",
+    "paid_green": "#1B5E20",
+    "partial_orange": "#BF360C",
+    "partial_surface": "#FBE9E7",
+    "role_superadmin": "#4A148C",
+    "role_admin": "#1A237E",
+    "role_employee": "#006064",
+    "text_primary": "#1A1A1A",
+    "text_secondary": "#4A4A4A",
+    "text_hint": "#9E9E9E",
+    "divider": "#E0E0E0",
+    "bill_tab_active": "#2E7D32",
+    "bill_tab_inactive": "#B0BEC5",
+    "bill_tab_draft": "#F9A825",
+    "stock_healthy": "#43A047",
+    "stock_low": "#FB8C00",
+    "stock_critical": "#E53935",
+    "stock_out": "#B71C1C"
+  },
+ 
+  "windows_keyboard_shortcuts": {
+    "F1": "New Bill",
+    "F2": "Stock Entry",
+    "F3": "Udhaar Dashboard",
+    "F4": "Customer Search",
+    "F5": "Reports",
+    "F6": "Add Expense",
+    "F7": "Product List",
+    "Ctrl+P": "Print last bill",
+    "Ctrl+B": "Focus billing tab",
+    "Ctrl+1 to Ctrl+5": "Switch between 5 bill draft tabs",
+    "Esc": "Cancel or go back",
+    "Enter": "Confirm current action"
+  }
+}
+
+
+PROMPT 1:-
+
+Create the Flutter project with all dependencies, complete folder structure, AppColors class, AppStrings class (all Gujarati),
+global theme with Noto Sans Gujarati, role-aware navigation, and first launch wizard. The app must be runnable on both Windows
+and Android after this prompt.
+
+lib/
+├── main.dart                    # ProviderScope + MaterialApp + role-aware routing
+├── core/
+│   ├── database/
+│   │   ├── database_helper.dart  # SQLCipher singleton
+│   │   └── tables/              # one file per table
+│   ├── theme/
+│   │   ├── app_theme.dart        # Material theme with Noto Sans Gujarati
+│   │   ├── app_colors.dart       # ALL color tokens from color_system above
+│   │   └── app_text_styles.dart
+│   ├── constants/
+│   │   ├── app_strings.dart      # ALL UI strings in Gujarati
+│   │   └── app_icons.dart
+│   └── utils/
+│       ├── weight_calculator.dart
+│       ├── currency_formatter.dart  # Indian format ₹1,00,000
+│       ├── date_formatter.dart      # DD/MM/YYYY
+│       └── pin_hasher.dart          # SHA-256 PIN hashing
+├── features/
+│   ├── auth/                    # Login screen + role guard
+│   ├── products/
+│   ├── billing/
+│   ├── stock/
+│   ├── udhaar/
+│   ├── customers/
+│   ├── returns/
+│   ├── dashboard/
+│   ├── khata/
+│   ├── reports/
+│   ├── expenses/
+│   └── settings/
+└── shared/
+    ├── widgets/
+    ├── models/
+    └── providers/
+
+
+    {
+  "PROMPT_01": {
+    "name": "Project Setup and Foundation",
+    "depends_on": "Nothing — first prompt",
+    "platform": ["Flutter Windows", "Flutter Android"],
+    "key_additions": [
+      "SQLCipher encryption",
+      "3-role RBAC system",
+      "5-tab billing draft system",
+      "First launch wizard",
+      "Windows keyboard shortcuts",
+      "Enhanced color system"
+    ],
+    "task": "Create the Flutter project with all dependencies, complete folder structure, AppColors class, AppStrings class (all Gujarati), global theme with Noto Sans Gujarati, role-aware navigation, and first launch wizard. The app must be runnable on both Windows and Android after this prompt.",
+    "folder_structure": {
+      "lib": {
+        "main.dart": "ProviderScope + MaterialApp + role-aware routing",
+        "core": {
+          "database": {
+            "database_helper.dart": "SQLCipher singleton",
+            "tables": "One file per table"
+          },
+          "theme": {
+            "app_theme.dart": "Material theme with Noto Sans Gujarati",
+            "app_colors.dart": "ALL color tokens from color_system",
+            "app_text_styles.dart": "Text styles"
+          },
+          "constants": {
+            "app_strings.dart": "ALL UI strings in Gujarati",
+            "app_icons.dart": "Icon references"
+          },
+          "utils": {
+            "weight_calculator.dart": "Business logic utility",
+            "currency_formatter.dart": "Indian ₹ formatting",
+            "date_formatter.dart": "DD/MM/YYYY",
+            "pin_hasher.dart": "SHA-256 PIN hashing"
+          }
+        },
+        "features": [
+          "auth",
+          "products",
+          "billing",
+          "stock",
+          "udhaar",
+          "customers",
+          "returns",
+          "dashboard",
+          "khata",
+          "reports",
+          "expenses",
+          "settings"
+        ],
+        "shared": {
+          "widgets": "Reusable widgets",
+          "models": "Data models",
+          "providers": "Riverpod providers"
+        }
+      }
+    },
+    "sqlcipher_setup": {
+      "import": "import 'package:sqflite_sqlcipher/sqflite.dart';",
+      "database_open_logic": "Open encrypted database with password derived from SHA-256 hashed admin PIN",
+      "pin_storage": "Stored in flutter_secure_storage only"
+    },
+    "role_navigation": {
+      "enum": "UserRole { superadmin, admin, employee }",
+      "role_guard": "Wrap protected screens, redirect to login if role not allowed",
+      "navigation_per_role": {
+        "employee": ["Billing", "Stock View"],
+        "admin": ["Billing", "Stock", "Udhaar", "Khata", "Reports", "Expenses", "Products"],
+        "superadmin": ["All admin items + Settings + Superadmin Panel"]
+      }
+    },
+    "multi_bill_tabs": {
+      "count": 5,
+      "tab_colors": {
+        "has_items": "#2E7D32",
+        "empty": "#F9A825",
+        "error": "#E53935"
+      },
+      "keyboard_shortcuts": "Ctrl+1 through Ctrl+5 (Windows only)",
+      "confirmation_on_close": "Gujarati confirmation dialog if tab has items"
+    },
+    "first_launch_wizard": {
+      "steps": [
+        "Welcome screen",
+        "Enter shop name",
+        "Set Superadmin 6-digit PIN",
+        "Set Admin 4-digit PIN",
+        "Enable/disable modules",
+        "Connect thermal printer (skippable)"
+      ],
+      "completion_flag": "settings.wizard_complete = true"
+    },
+    "expected_output": [
+      "App runs on Windows and Android",
+      "Login screen with role selector",
+      "Role-aware navigation",
+      "5 billing draft tabs placeholder",
+      "Gujarati font rendering correct",
+      "Keyboard shortcuts registered"
+    ]
+  }
+}
+
+
+prompt 2:-
+{
+  "PROMPT_02": {
+    "name": "Complete Database Schema",
+    "depends_on": "P01",
+    "key_additions": [
+      "RBAC users table",
+      "Full SQLCipher encryption",
+      "expense_accounts table",
+      "transliteration_dictionary",
+      "khata_ledger",
+      "walkin customer account_type",
+      "partial_return bill status"
+    ],
+    "task": "Create DatabaseHelper singleton using SQLCipher, implement all CREATE TABLE statements, all indexes, default data insertion, and create one Dart model class per table with fromMap() and toMap() methods.",
+    "database_engine": "SQLCipher (sqflite_sqlcipher)",
+    "tables": [
+      "settings",
+      "users",
+      "categories",
+      "products",
+      "customers",
+      "bills",
+      "bill_items",
+      "stock_log",
+      "udhaar_ledger",
+      "bill_payments",
+      "expense_accounts",
+      "expenses",
+      "transliteration_dictionary",
+      "returns",
+      "return_items",
+      "replace_transactions",
+      "khata_ledger",
+      "reminder_log"
+    ],
+    "settings_default_values": {
+      "shop_name": "મારી દુકાન",
+      "shop_address": "",
+      "shop_phone": "",
+      "print_udhaar_receipt": "false",
+      "print_payment_receipt": "true",
+      "print_final_receipt": "true",
+      "reminder_whatsapp": "false",
+      "reminder_sms": "false",
+      "reminder_pdf": "false",
+      "module_returns": "true",
+      "module_replace": "true",
+      "module_udhaar": "true",
+      "module_stock_alerts": "true",
+      "module_daily_pl": "true",
+      "module_khata": "true",
+      "module_multi_bill_tabs": "true",
+      "module_expense_accounts": "true",
+      "gst_enabled": "false",
+      "credit_limit_default": "2000",
+      "bill_counter": "1",
+      "large_text": "false",
+      "session_timeout_minutes": "5",
+      "wizard_complete": "false"
+    },
+    "sql_requirements": [
+      "All foreign keys must be enforced",
+      "All multi-table writes must use transactions",
+      "Indexes must be created exactly as specified",
+      "All tables must include created_at where applicable"
+    ],
+    "model_requirements": {
+      "location": "shared/models/",
+      "each_table_requires": [
+        "Model class",
+        "Constructor",
+        "fromMap() method",
+        "toMap() method"
+      ]
+    },
+    "special_rules": [
+      "users.pin_hash must store SHA-256 hash only",
+      "customers.account_type supports 'regular' and 'walkin'",
+      "bills.payment_status supports 'paid','udhaar','partial','partial_return','fully_returned'",
+      "transliteration_dictionary must preload 200+ phonetic mappings",
+      "expense_accounts must preload fixed and variable accounts",
+      "runInTransaction() wrapper must be implemented in DatabaseHelper"
+    ],
+    "expected_output": [
+      "database_helper.dart with SQLCipher initialization",
+      "All 18 tables created on first launch",
+      "Indexes created",
+      "Default rows inserted",
+      "Transaction wrapper available",
+      "One Dart model per table"
+    ]
+  }
+}
+
+
+prompt 3:-
+{
+  "PROMPT_03": {
+    "name": "Product Master Module",
+    "depends_on": "P02",
+    "key_additions": [
+      "3-way search (Gujarati name, English name, sell price)",
+      "Transliteration-aware search",
+      "Product page accessible from main navigation",
+      "WeightCalculator utility with replace calculation"
+    ],
+    "task": "Build complete product management module including product list screen, add/edit product screen, category management, transliteration-aware search, and ProductProvider using Riverpod.",
+    "access_control": {
+      "allowed_roles": ["admin", "superadmin"],
+      "employee_access": false,
+      "main_navigation_item": true
+    },
+    "screens": {
+      "ProductListScreen": {
+        "route": "/products",
+        "layout": [
+          "Search bar at top (fires on every keystroke after 1 character)",
+          "Category filter chips below search",
+          "Scrollable product cards list",
+          "Floating Action Button: + ઉત્પાદ ઉમેરો"
+        ],
+        "product_card_fields": [
+          "Gujarati name",
+          "Sell price",
+          "Current stock quantity"
+        ],
+        "stock_color_rules": {
+          "healthy": {
+            "condition": "stock_qty > min_stock_qty",
+            "color": "#43A047"
+          },
+          "warning": {
+            "condition": "stock_qty within 20 percent above minimum",
+            "color": "#FB8C00"
+          },
+          "critical": {
+            "condition": "stock_qty < min_stock_qty",
+            "color": "#E53935"
+          }
+        },
+        "long_press_actions": [
+          "Edit product",
+          "Delete product (Gujarati confirmation required)"
+        ]
+      },
+      "AddEditProductScreen": {
+        "routes": ["/products/add", "/products/edit/:id"],
+        "fields": [
+          {
+            "name": "Product name Gujarati",
+            "required": true,
+            "transliteration_hint": "marchu, tuverdal ટાઈપ કરો",
+            "auto_suggest_from_transliteration_dictionary": true
+          },
+          {
+            "name": "Transliteration keys",
+            "auto_generated": true,
+            "editable": true
+          },
+          {
+            "name": "Product name English",
+            "required": false
+          },
+          {
+            "name": "Category",
+            "type": "Dropdown"
+          },
+          {
+            "name": "Unit type",
+            "type": "Selector Chips",
+            "values": ["કિલો", "ગ્રામ", "નંગ", "લીટર"]
+          },
+          {
+            "name": "Buy price",
+            "type": "Numpad input",
+            "currency_prefix": "₹"
+          },
+          {
+            "name": "Sell price",
+            "type": "Numpad input",
+            "currency_prefix": "₹",
+            "warning_if_less_than_buy_price": true
+          },
+          {
+            "name": "Current stock",
+            "type": "Numpad input"
+          },
+          {
+            "name": "Minimum stock alert level",
+            "type": "Numpad input"
+          },
+          {
+            "name": "Active toggle"
+          }
+        ],
+        "on_save_logic": [
+          "Insert or update product",
+          "If initial stock > 0 insert stock_log entry type=purchase",
+          "Show Gujarati success snackbar",
+          "Navigate back to product list"
+        ]
+      }
+    },
+    "search_logic": {
+      "trigger_condition": "After 1 character typed",
+      "search_dimensions": [
+        "name_gujarati LIKE %query%",
+        "name_english LIKE %query%",
+        "CAST(sell_price AS TEXT) LIKE %query%",
+        "transliteration_keys LIKE %query%"
+      ],
+      "transliteration_step": "Search transliteration_dictionary.phonetic_key LIKE %query% and match gujarati_text against products",
+      "fuzzy_matching": {
+        "package": "string_similarity",
+        "ranking_priority": [
+          "Exact match",
+          "Starts with",
+          "Contains",
+          "Fuzzy similarity"
+        ]
+      },
+      "deduplication_required": true,
+      "search_hint_text": "નામ, ભાવ અથવા marchu, tuverdal ટાઈપ કરો"
+    },
+    "weight_calculator_utility": {
+      "file": "lib/core/utils/weight_calculator.dart",
+      "functions": [
+        {
+          "name": "calculateWeightFromAmount",
+          "formula": "(amountPaid / sellPricePerKg) * 1000",
+          "validation": "sellPricePerKg must be greater than 0"
+        },
+        {
+          "name": "calculateAmountFromWeight",
+          "formula": "(weightGrams / 1000) * sellPricePerKg"
+        },
+        {
+          "name": "formatWeight",
+          "rules": [
+            "If grams < 1000 display 'XXX ગ્રામ'",
+            "If grams >= 1000 display 'X.X કિલો'"
+          ]
+        },
+        {
+          "name": "calculateReplaceWeight",
+          "formula": "(returnedGrams * returnedPrice) / replacementPrice",
+          "validation": "replacementPrice must be greater than 0"
+        }
+      ]
+    },
+    "provider_requirements": {
+      "state_management": "Riverpod",
+      "provider_name": "ProductProvider",
+      "functions_required": [
+        "addProduct",
+        "updateProduct",
+        "deleteProduct",
+        "searchProducts",
+        "getLowStockProducts"
+      ]
+    },
+    "expected_output": [
+      "Product list accessible from main navigation for Admin and Superadmin",
+      "3-way search working including transliteration",
+      "Add/edit product form fully functional",
+      "WeightCalculator utility implemented and tested",
+      "Low stock highlighting working with correct color codes"
+    ]
+  }
+}
+
+
+prompt 4:-
+{
+  "PROMPT_04": {
+    "name": "Smart Billing Module",
+    "depends_on": ["P03"],
+    "key_additions": [
+      "5-tab independent draft billing system",
+      "Walk-in udhaar inline customer creation",
+      "Mandatory customer selection for udhaar",
+      "Reprint button on every bill",
+      "14-step atomic save transaction"
+    ],
+    "task": "Build the complete billing system with multi-tab drafts, smart price-weight calculation, all payment modes including split, bill history with filters, and Gujarati thermal printing rendered as image.",
+    "billing_screen": {
+      "route": "/billing",
+      "tab_system": {
+        "count": 5,
+        "tab_ids": ["bill_1", "bill_2", "bill_3", "bill_4", "bill_5"],
+        "platform_behavior": {
+          "windows": "Tab bar across top with Ctrl+1 to Ctrl+5 switching",
+          "android": "Scrollable horizontal TabBar"
+        },
+        "tab_color_rules": {
+          "has_items": "#2E7D32",
+          "empty": "#F9A825",
+          "error": "#E53935"
+        },
+        "unsaved_indicator": "Orange dot on tab if draft contains items",
+        "close_confirmation": "Gujarati dialog if closing tab with items"
+      },
+      "customer_section": {
+        "enabled_if_setting": "show_customer_name_on_bill",
+        "search": "Transliteration-aware customer search",
+        "manual_entry_for_cash": true
+      },
+      "product_entry_section": {
+        "search": "Transliteration-aware product search",
+        "entry_modes": [
+          {
+            "mode": "₹ રકમથી",
+            "behavior": "Enter rupee amount and auto-calculate grams"
+          },
+          {
+            "mode": "વજનથી",
+            "behavior": "Enter grams and auto-calculate rupee amount"
+          }
+        ],
+        "preview_display_format": "આ ₹100 ની 250 ગ્રામ",
+        "add_item_action": "Adds item to bill draft list",
+        "remove_item_action": "Swipe left with Gujarati confirmation"
+      },
+      "bill_items_list": {
+        "columns": ["Product Name", "Weight/Qty", "Amount"],
+        "weight_visibility": {
+          "admin": true,
+          "employee": false,
+          "customer_print": false
+        }
+      },
+      "payment_section": {
+        "enabled_if_setting": "show_payment_mode_on_bill",
+        "modes": ["cash", "upi", "card", "udhaar", "split"]
+      }
+    },
+    "walkin_udhaar_logic": {
+      "trigger_condition": "payment_mode == udhaar AND no customer selected",
+      "bottom_sheet_options": [
+        "Search existing customer",
+        "Create new walk-in customer"
+      ],
+      "walkin_creation_fields": [
+        "Gujarati name (required)",
+        "Phone (optional)"
+      ],
+      "account_type": "walkin",
+      "printing_rule": {
+        "regular_customer_print_udhaar": "based on setting print_udhaar_receipt",
+        "walkin_always_print": true
+      }
+    },
+    "split_payment_logic": {
+      "fields": [
+        "cash_or_upi_amount",
+        "udhaar_amount_auto_calculated"
+      ],
+      "validation": "cash + udhaar must equal total"
+    },
+    "credit_limit_check": {
+      "trigger": "Before saving bill",
+      "if_exceeded": {
+        "admin_superadmin": "Show override dialog",
+        "employee": "Block save"
+      }
+    },
+    "atomic_save_transaction": {
+      "total_steps": 14,
+      "all_steps_inside_single_transaction": true,
+      "steps": [
+        "Generate bill number BILL-YYYYMMDD-NNNN",
+        "If walk-in udhaar create customer record",
+        "Insert into bills table",
+        "Insert bill_items",
+        "Deduct product stock_qty",
+        "Insert stock_log entries (type=sale)",
+        "Insert udhaar_ledger if applicable",
+        "Update customers.total_outstanding",
+        "Insert khata_ledger entry",
+        "Check min_stock and prepare alerts",
+        "Increment settings.bill_counter",
+        "Mark tab completed",
+        "Commit transaction",
+        "Post-commit: fire stock alerts and trigger print"
+      ],
+      "rollback_rule": "If any step fails, entire transaction rolls back"
+    },
+    "thermal_print": {
+      "paper_width": "58mm",
+      "render_method": "Render Flutter widget → RepaintBoundary → PNG → ESC/POS image",
+      "must_use_image_rendering_for_gujarati": true,
+      "layout_structure": [
+        "Shop Name centered bold",
+        "Date and Bill Number",
+        "Customer name if enabled",
+        "Item rows",
+        "Grand total",
+        "Payment mode if enabled",
+        "Thank you message",
+        "3 blank lines for cut"
+      ]
+    },
+    "bill_history_screen": {
+      "route": "/billing/history",
+      "filters": ["Today", "This Week", "This Month", "Custom Range"],
+      "status_chips": ["Paid", "Udhaar", "Partial", "Returned"],
+      "status_colors": {
+        "paid": "#2E7D32",
+        "udhaar": "#C62828",
+        "partial": "#BF360C",
+        "partial_return": "#F57F00",
+        "fully_returned": "#9E9E9E"
+      },
+      "bill_detail_screen": {
+        "features": [
+          "Itemized list",
+          "Strikethrough returned items",
+          "Always visible Reprint button",
+          "Reprint does not create new bill"
+        ]
+      }
+    },
+    "expected_output": [
+      "5 independent billing draft tabs",
+      "Smart price-to-weight and weight-to-price working",
+      "Walk-in udhaar inline creation",
+      "All 5 payment modes functional",
+      "14-step atomic save working",
+      "Gujarati thermal printing working",
+      "Bill history and reprint functional"
+    ]
+  }
+}
+
+prompt 5:-
+{
+  "PROMPT_05": {
+    "name": "Stock Management Module",
+    "depends_on": ["P04"],
+    "key_additions": [
+      "Stock purchases linked to expense_accounts",
+      "Automatic P&L reflection",
+      "Role-aware low stock alerts",
+      "Out-of-stock prevention in billing"
+    ],
+    "task": "Build stock dashboard, add-stock screen linked to expense accounts, stock movement history, and low-stock alert system that fires after every bill save.",
+    
+    "stock_dashboard_screen": {
+      "route": "/stock",
+      "summary_cards": [
+        "Total Products",
+        "Low Stock Count (orange badge)",
+        "Out of Stock Count (red badge)"
+      ],
+      "product_list": {
+        "search": "Transliteration-aware search",
+        "category_filter": true,
+        "row_color_rules": {
+          "healthy": {
+            "condition": "stock_qty > min_stock_qty",
+            "background_color": "#E8F5E9"
+          },
+          "low": {
+            "condition": "stock_qty <= min_stock_qty AND stock_qty > 0",
+            "background_color": "#FFF8E1"
+          },
+          "out_of_stock": {
+            "condition": "stock_qty <= 0",
+            "background_color": "#FFEBEE"
+          }
+        },
+        "row_fields": [
+          "Product Name",
+          "Current Stock Quantity",
+          "Minimum Stock Quantity",
+          "Quick Add Stock Button (+ ઉમેરો)"
+        ]
+      }
+    },
+
+    "add_stock_screen": {
+      "route": "/stock/add",
+      "fields": [
+        {
+          "name": "Product",
+          "type": "Searchable Dropdown",
+          "search": "Transliteration-aware"
+        },
+        {
+          "name": "Quantity Received",
+          "type": "Numpad Input"
+        },
+        {
+          "name": "Buy Price Per Unit",
+          "type": "Numpad Input",
+          "prefill": "products.buy_price",
+          "editable": true
+        },
+        {
+          "name": "Expense Account",
+          "type": "Dropdown",
+          "source": "expense_accounts table",
+          "default": "ખરીદી"
+        },
+        {
+          "name": "Supplier Name",
+          "type": "Optional Text"
+        },
+        {
+          "name": "Date",
+          "default": "Today"
+        },
+        {
+          "name": "Notes",
+          "optional": true
+        }
+      ],
+      "atomic_transaction_steps": [
+        "Update products.stock_qty += qty_received",
+        "Insert stock_log entry (type=purchase, positive qty)",
+        "Insert expenses row (amount = qty * buy_price)",
+        "Insert khata_ledger entry (type=debit, purchase)",
+        "If buy_price changed update products.buy_price",
+        "Commit transaction",
+        "Show Gujarati success snackbar with new stock total"
+      ]
+    },
+
+    "stock_history_screen": {
+      "route": "/stock/history/:productId",
+      "header": [
+        "Product Name",
+        "Current Stock Quantity"
+      ],
+      "timeline_fields": [
+        "Date",
+        "Transaction Type Icon",
+        "Quantity Change (+/-)",
+        "Balance After"
+      ],
+      "row_color_rules": {
+        "positive": "Green (purchase, return)",
+        "negative": "Red (sale, replace_out)"
+      },
+      "filters": [
+        "Transaction Type",
+        "Date Range"
+      ]
+    },
+
+    "low_stock_alert_system": {
+      "trigger_point": "After bill save transaction commits",
+      "logic": "If product.stock_qty <= product.min_stock_qty add to alert list",
+      "role_visibility": {
+        "employee": "Red banner at top of billing screen only",
+        "admin": "Red banner + local notification",
+        "superadmin": "Red banner + notification + snooze option"
+      }
+    },
+
+    "out_of_stock_prevention": {
+      "condition": "product.stock_qty <= 0",
+      "behavior": [
+        "Show 'સ્ટોક ખૂટ્યો' badge in billing search",
+        "Disable Add button",
+        "Show Gujarati error if attempted"
+      ]
+    },
+
+    "expected_output": [
+      "Stock dashboard with color-coded indicators",
+      "Add stock updates stock, expense, and khata atomically",
+      "Stock history full audit trail",
+      "Low stock alerts firing after bill save",
+      "Out-of-stock items blocked from billing"
+    ]
+  }
+}
+
+prompt 6:-
+{
+  "PROMPT_06": {
+    "name": "Udhaar (Credit) System",
+    "depends_on": ["P04"],
+    "key_additions": [
+      "Udhaar dashboard NOT visible on home screen",
+      "Walk-in customer badge",
+      "Per-customer monthly filter",
+      "Expandable bill line items",
+      "FIFO and bill-specific payment modes"
+    ],
+    "task": "Build complete credit management module including standalone Udhaar dashboard, customer ledger with month filtering, dual payment modes, final total screen, walk-in account management, and reminder system.",
+    
+    "privacy_rules": {
+      "udhaar_not_on_home_dashboard": true,
+      "employee_access": false,
+      "admin_access": true,
+      "superadmin_access": true
+    },
+
+    "udhaar_dashboard_screen": {
+      "route": "/udhaar",
+      "summary_top": {
+        "label": "કુલ ઉધાર બાકી",
+        "color": "#C62828"
+      },
+      "customer_list": {
+        "sorted_by": "Outstanding amount descending",
+        "row_fields": [
+          "Customer Name",
+          "Outstanding Amount",
+          "Days Since Oldest Unpaid Bill",
+          "Walk-in Badge if account_type=walkin",
+          "Reminder Bell Icon"
+        ],
+        "days_color_rules": {
+          "<15_days": "#43A047",
+          "15_30_days": "#FB8C00",
+          ">30_days": "#E53935"
+        }
+      },
+      "fab": "+ નવો ગ્રાહક"
+    },
+
+    "customer_ledger_screen": {
+      "route": "/udhaar/customer/:id",
+      "header_fields": [
+        "Customer Name",
+        "Phone",
+        "Total Outstanding"
+      ],
+      "walkin_conversion_button": {
+        "visible_if": "account_type == walkin",
+        "action": "Convert to regular customer"
+      },
+      "action_buttons": [
+        "₹ ચૂકવણી લો",
+        "📊 Final Total",
+        "🔔 Reminder"
+      ],
+      "month_filter": "Dropdown YYYY-MM",
+      "transaction_list": {
+        "row_types": {
+          "credit_purchase": {
+            "icon": "🛒",
+            "display": "+₹amount",
+            "running_balance": true
+          },
+          "payment": {
+            "icon": "✓",
+            "display": "-₹amount",
+            "running_balance": true
+          }
+        },
+        "expand_on_purchase": {
+          "query": "SELECT product_name_snapshot, qty, amount FROM bill_items WHERE bill_id = ?",
+          "display_line_items": true
+        }
+      }
+    },
+
+    "collect_payment_screen": {
+      "route": "/udhaar/collect/:customerId",
+      "tabs": [
+        {
+          "name": "એકંદર ચૂકવણી",
+          "logic": "FIFO — oldest unpaid bills cleared first",
+          "fields": [
+            "Total Outstanding Display",
+            "Amount Field",
+            "Payment Mode (Cash, UPI, Card)",
+            "Optional Note"
+          ]
+        },
+        {
+          "name": "ચોક્કસ બિલ",
+          "logic": "Apply payment to selected bill only",
+          "fields": [
+            "List unpaid/partial bills",
+            "Select bill",
+            "Enter payment amount"
+          ]
+        }
+      ],
+      "atomic_transaction_steps": [
+        "Insert udhaar_ledger (type=payment)",
+        "Update customers.total_outstanding",
+        "If bill-specific insert bill_payments",
+        "Update bills.paid_amount",
+        "Update bills.payment_status",
+        "Insert khata_ledger (type=credit)",
+        "Commit",
+        "Print receipt if setting enabled"
+      ]
+    },
+
+    "final_total_screen": {
+      "route": "/udhaar/final/:customerId",
+      "layout_sections": [
+        "Customer Name Large",
+        "Previous Months Collapsible",
+        "Current Month Purchases",
+        "Grand Total Outstanding"
+      ],
+      "reminder_buttons_visibility": {
+        "whatsapp": "if reminder_whatsapp=true",
+        "sms": "if reminder_sms=true",
+        "pdf": "if reminder_pdf=true"
+      },
+      "whatsapp_template": "નમસ્તે {name} 🙏\n*{shop}*\nબાકી: ₹{total}\nકૃપા ચૂકવો. આભાર 🙏"
+    },
+
+    "expected_output": [
+      "Standalone Udhaar dashboard",
+      "Employee cannot access Udhaar",
+      "Walk-in customers shown with badge",
+      "Expandable product line items in ledger",
+      "FIFO general payment working",
+      "Bill-specific payment working",
+      "Final total breakdown by month",
+      "Reminder integration respecting settings"
+    ]
+  }
+}
+
+Prompt 7:-
+
+{
+  "PROMPT_07": {
+    "name": "Returns and Replace Module",
+    "depends_on": ["P04", "P05"],
+    "key_additions": [
+      "11-step atomic return reflection chain",
+      "partial_return and fully_returned bill status handling",
+      "Walk-in customer returns cash-only restriction",
+      "Replace logic with cross-product weight calculation"
+    ],
+    "task": "Build complete return flow for partial and full bill returns, and replace flow with correct accounting reflections. All operations must execute atomically inside a single database transaction.",
+    
+    "return_screen": {
+      "route": "/returns/new",
+      "steps": [
+        {
+          "step": 1,
+          "description": "Find original bill by bill number or customer name",
+          "display_fields": ["Date", "Customer", "Total Amount", "Item List"]
+        },
+        {
+          "step": 2,
+          "description": "Select items to return",
+          "rules": [
+            "Each item has checkbox and quantity field",
+            "Returned quantity cannot exceed original purchased quantity",
+            "Already returned items are disabled and greyed out"
+          ]
+        },
+        {
+          "step": 3,
+          "description": "Choose refund mode",
+          "options": {
+            "regular_customer": ["Cash Refund", "Udhaar Credit"],
+            "walkin_customer": ["Cash Refund Only"]
+          }
+        },
+        {
+          "step": 4,
+          "description": "Confirm return summary with total refund value"
+        }
+      ]
+    },
+
+    "return_atomic_transaction": {
+      "total_steps": 11,
+      "must_run_inside_single_transaction": true,
+      "steps": [
+        "Insert record into returns table",
+        "Insert return_items for each product",
+        "Set bill_items.is_returned = 1",
+        "Update bills.payment_status to partial_return or fully_returned",
+        "Increase products.stock_qty by returned quantity",
+        "Insert stock_log entry type=return",
+        "Deduct returned amount from P&L on return date (not original sale date)",
+        "If cash refund insert khata_ledger type=debit",
+        "If udhaar_credit insert udhaar_ledger type=payment and reduce total_outstanding",
+        "Commit transaction",
+        "Post-commit refresh bill detail UI with strikethrough and Gujarati label"
+      ],
+      "rollback_rule": "If any step fails entire transaction rolls back"
+    },
+
+    "bill_detail_reflection": {
+      "returned_item_display": {
+        "style": "Strikethrough text",
+        "label": "પાછું આવ્યું",
+        "color": "Red"
+      },
+      "status_badge_updates": true,
+      "reprint_reflects_return": true
+    },
+
+    "replace_screen": {
+      "route": "/returns/replace",
+      "replace_formula": "(returned_grams * returned_price) / replacement_price",
+      "steps": [
+        {
+          "step": 1,
+          "description": "Select returned product and quantity",
+          "display": "Show calculated return value in ₹"
+        },
+        {
+          "step": 2,
+          "description": "Select replacement product",
+          "display_large_card": "Visual summary of conversion with weights and prices"
+        },
+        {
+          "step": 3,
+          "description": "Handle price difference if any",
+          "difference_modes": ["cash_paid", "cash_received", "udhaar"]
+        },
+        {
+          "step": 4,
+          "description": "Confirm and execute transaction"
+        }
+      ]
+    },
+
+    "replace_atomic_transaction": {
+      "steps": [
+        "Execute return chain steps 1 through 7",
+        "Insert replace_transactions record",
+        "Deduct replacement product stock",
+        "Insert stock_log entry type=replace_out",
+        "Handle price difference settlement",
+        "Commit"
+      ],
+      "validation_rules": [
+        "Replacement product must have sufficient stock",
+        "Replacement price cannot be zero",
+        "Returned quantity cannot exceed original quantity"
+      ]
+    },
+
+    "expected_output": [
+      "Return flow supports partial and full returns",
+      "Walk-in customers can only receive cash refund",
+      "All 11 accounting reflections executed atomically",
+      "Bill detail screen updates immediately after return",
+      "Replace screen clearly shows calculated weight to give",
+      "Stock updated correctly for both returned and replacement items"
+    ]
+  }
+}
+
+Prompt 8:-
+{
+  "PROMPT_08": {
+    "name": "Dashboard, Reports, Expenses & Khata Page",
+    "depends_on": ["P05", "P06"],
+    "key_additions": [
+      "Role-aware dashboard",
+      "P&L on separate protected page",
+      "New Khata unified ledger page",
+      "Expense accounts with pre-fill",
+      "Daily and monthly reports"
+    ],
+    "task": "Build role-aware home dashboard, separate P&L report page, Khata/Payments unified ledger page, expense management with predefined accounts, and daily/monthly reports.",
+    
+    "dashboard_screen": {
+      "route": "/",
+      "role_behavior": {
+        "employee": {
+          "visible_items": [
+            "Large Quick Bill Button",
+            "Low Stock Alert Banner (if any)"
+          ],
+          "hidden_items": [
+            "Sales totals",
+            "Expenses totals",
+            "P&L data",
+            "Udhaar totals"
+          ]
+        },
+        "admin": {
+          "visible_items": [
+            "Today Sales Card (green)",
+            "Today Expenses Card (red)",
+            "Low Stock Alert Banner",
+            "7-Day Sales Bar Chart (fl_chart)",
+            "Quick Actions: Billing, Stock, Udhaar, Expense"
+          ]
+        },
+        "superadmin": {
+          "visible_items": [
+            "All Admin items",
+            "Net Profit Today (green if positive, red if negative)",
+            "Total Udhaar Outstanding"
+          ]
+        }
+      },
+      "strict_exclusions": [
+        "Detailed P&L not on dashboard",
+        "Udhaar totals hidden from Employee",
+        "Customer credit details hidden from Employee"
+      ]
+    },
+
+    "pl_report_page": {
+      "route": "/reports/pl",
+      "access": ["admin", "superadmin"],
+      "filters": ["Today", "Week", "Month", "Custom Range"],
+      "sections": [
+        "Total Sales (bill count + amount)",
+        "Payment Mode Breakdown (cash, upi, card, udhaar)",
+        "Expenses by Expense Account",
+        "Returns Deduction",
+        "Net P&L Calculation"
+      ],
+      "net_profit_formula": "(Cash + UPI + Card Sales) - Expenses",
+      "note": "Udhaar not counted as income until collected",
+      "visualization": "fl_chart bar chart sales vs expenses last 7 days",
+      "comparison": "Month-over-month comparison row"
+    },
+
+    "khata_page": {
+      "route": "/khata",
+      "access": ["admin", "superadmin"],
+      "purpose": "Unified double-entry ledger of all money movement",
+      "tabs": [
+        {
+          "name": "ક્રેડિટ",
+          "description": "Money In",
+          "sources": [
+            "Cash Sales",
+            "UPI Sales",
+            "Card Sales",
+            "Udhaar Payments Received"
+          ]
+        },
+        {
+          "name": "ડેબિટ",
+          "description": "Money Out",
+          "sources": [
+            "Stock Purchases",
+            "Fixed Expenses",
+            "Variable Expenses",
+            "Cash Refunds for Returns"
+          ]
+        },
+        {
+          "name": "All",
+          "description": "Combined view sorted by latest"
+        }
+      ],
+      "filters": [
+        "By Account Name",
+        "By Date Range",
+        "By Entry Type"
+      ],
+      "row_behavior": "Each row tappable to open original transaction",
+      "running_total": "Updates based on filters"
+    },
+
+    "add_expense_screen": {
+      "route": "/expenses/add",
+      "fields": [
+        {
+          "name": "Expense Account",
+          "source": "expense_accounts table",
+          "required": true
+        },
+        {
+          "name": "Amount",
+          "type": "Numpad Input",
+          "prefill": "typical_amount for fixed accounts"
+        },
+        {
+          "name": "Description",
+          "optional": true
+        },
+        {
+          "name": "Date",
+          "default": "Today"
+        }
+      ],
+      "save_logic": [
+        "Insert expenses record",
+        "Insert khata_ledger entry type=debit",
+        "Show Gujarati success snackbar"
+      ],
+      "inline_add_account": "Opens ExpenseAccountManager without navigation"
+    },
+
+    "daily_report_screen": {
+      "route": "/reports/daily",
+      "default_date": "Today",
+      "sections": [
+        "Total Bills Count and Amount",
+        "Breakdown by Payment Mode",
+        "Expenses by Category",
+        "New Udhaar Added",
+        "Udhaar Collected",
+        "Returns Processed",
+        "Net P&L (Cash+UPI+Card - Expenses)"
+      ],
+      "bottom_section": "Scrollable list of all bills for selected date",
+      "export_option": "Export as PDF"
+    },
+
+    "expected_output": [
+      "Dashboard shows role-appropriate data only",
+      "P&L page accessible only to Admin and Superadmin",
+      "Khata page reflects unified ledger entries",
+      "Expense entry pre-fills fixed accounts",
+      "Daily report provides full financial breakdown"
+    ]
+  }
+}
+
+Prompt 9:-
+{
+  "PROMPT_09": {
+    "name": "Settings and Superadmin Panel",
+    "depends_on": ["P01", "P02"],
+    "key_additions": [
+      "3-level PIN authentication screen",
+      "Superadmin protected panel",
+      "Module manager (feature toggles)",
+      "User manager (PIN reset + employee management)",
+      "Expense account CRUD manager",
+      "Transliteration dictionary manager",
+      "Session timeout security"
+    ],
+    "task": "Build login screen with 3-role PIN entry, complete settings panel with all toggles, password-protected superadmin panel with module and user management, and utility managers for expense accounts and transliteration dictionary.",
+    
+    "login_screen": {
+      "roles": [
+        {
+          "name": "superadmin",
+          "label": "🟣 સુપરએડમિન",
+          "color": "#4A148C",
+          "pin_digits": 6
+        },
+        {
+          "name": "admin",
+          "label": "🔵 એડમિન",
+          "color": "#1A237E",
+          "pin_digits": 4
+        },
+        {
+          "name": "employee",
+          "label": "🟢 કર્મચારી",
+          "color": "#006064",
+          "pin_digits": 4
+        }
+      ],
+      "pin_numpad": {
+        "button_size": "Minimum 72dp",
+        "dot_indicators": true,
+        "background_color_matches_role": true,
+        "wrong_pin_behavior": [
+          "Shake animation",
+          "Show Gujarati 'ખોટો PIN'",
+          "Increment fail counter"
+        ],
+        "lockout_rule": "After 3 consecutive wrong attempts → 30-second countdown lockout"
+      },
+      "session_timeout": {
+        "based_on_setting": "session_timeout_minutes",
+        "behavior": "On background → start timer; On foreground after timeout → require PIN again"
+      }
+    },
+
+    "settings_screen": {
+      "route": "/settings",
+      "access": ["admin", "superadmin"],
+      "sections": [
+        {
+          "name": "Shop Information",
+          "fields": [
+            "shop_name",
+            "shop_address",
+            "shop_phone",
+            "shop_gst_number"
+          ]
+        },
+        {
+          "name": "Bill Settings",
+          "toggles": [
+            "show_customer_name_on_bill",
+            "show_payment_mode_on_bill",
+            "show_weight_on_bill",
+            "gst_enabled"
+          ]
+        },
+        {
+          "name": "Print Settings",
+          "toggles": [
+            "print_udhaar_receipt",
+            "print_payment_receipt",
+            "print_final_receipt"
+          ],
+          "buttons": [
+            "Bluetooth Printer Connect (Android)",
+            "USB Printer Setup (Windows)",
+            "Test Print"
+          ]
+        },
+        {
+          "name": "Reminder Settings",
+          "toggles": [
+            "reminder_whatsapp",
+            "reminder_sms",
+            "reminder_pdf"
+          ]
+        },
+        {
+          "name": "Security Settings",
+          "fields": [
+            "session_timeout_minutes"
+          ],
+          "toggles": [
+            "require_pin_on_open"
+          ],
+          "buttons": [
+            "Change Admin PIN",
+            "Change Employee PIN"
+          ]
+        },
+        {
+          "name": "Data Management",
+          "buttons": [
+            "Export All Data as JSON",
+            "Reset Bill Counter"
+          ]
+        },
+        {
+          "name": "Display",
+          "toggles": [
+            "large_text"
+          ]
+        }
+      ]
+    },
+
+    "superadmin_panel": {
+      "route": "/superadmin",
+      "access": ["superadmin"],
+      "requires_pin_reentry": true,
+      "sections": [
+        {
+          "name": "Module Manager",
+          "modules": [
+            "module_udhaar",
+            "module_returns",
+            "module_replace",
+            "module_stock_alerts",
+            "module_daily_pl",
+            "module_khata",
+            "module_expense_accounts",
+            "module_multi_bill_tabs"
+          ],
+          "behavior": [
+            "If OFF → navigation item disappears",
+            "If OFF → related UI components hidden",
+            "Data retained but inaccessible"
+          ]
+        },
+        {
+          "name": "User Manager",
+          "features": [
+            "View all users",
+            "Reset Admin PIN",
+            "Reset Employee PIN",
+            "Add Employee",
+            "Deactivate Employee"
+          ],
+          "rules": [
+            "PIN must be entered twice to confirm reset",
+            "Deactivated employees cannot login"
+          ]
+        },
+        {
+          "name": "Shop Manager",
+          "features": [
+            "Change shop name",
+            "Reset all settings to default",
+            "Factory Reset (triple confirmation required)"
+          ]
+        },
+        {
+          "name": "Data",
+          "features": [
+            "Export Full JSON Backup",
+            "View Database Stats (table row counts)"
+          ]
+        }
+      ]
+    },
+
+    "expense_account_manager": {
+      "access_from": "Settings → Expense Accounts",
+      "list_fields": [
+        "Account Name Gujarati",
+        "Account Type Badge (Fixed/Variable)",
+        "Typical Amount",
+        "Active Toggle"
+      ],
+      "add_form_fields": [
+        "account_name_gujarati (required)",
+        "account_name_english (optional)",
+        "account_type (Fixed/Variable)",
+        "typical_amount (numpad)"
+      ],
+      "rules": [
+        "Built-in accounts cannot be deleted",
+        "Accounts with linked expenses cannot be deleted",
+        "Deactivated accounts hidden from dropdown"
+      ]
+    },
+
+    "transliteration_manager": {
+      "access_from": "Settings → Transliteration Dictionary",
+      "list_fields": [
+        "Phonetic Key",
+        "Gujarati Text",
+        "Built-in/Custom Badge"
+      ],
+      "add_form_fields": [
+        "Phonetic Key (lowercase English)",
+        "Gujarati Text"
+      ],
+      "rules": [
+        "Built-in mappings are read-only",
+        "Custom mappings editable and deletable",
+        "Reset to Defaults deletes only custom mappings"
+      ]
+    },
+
+    "settings_provider": {
+      "class": "SettingsNotifier",
+      "state_type": "Map<String, String>",
+      "methods": [
+        "get(key)",
+        "getBool(key)",
+        "set(key, value)",
+        "isModuleEnabled(moduleName)"
+      ],
+      "usage_rule": "All modules must check module toggle before rendering UI"
+    },
+
+    "expected_output": [
+      "Login screen with 3 role selection",
+      "Role-colored PIN entry with lockout logic",
+      "Settings screen with persistent toggles",
+      "Superadmin module manager hides UI dynamically",
+      "User manager handles employee lifecycle",
+      "Expense account CRUD working",
+      "Transliteration manager supports custom mappings"
+    ]
+  }
+}
+Prompt 10:-
+{
+  "PROMPT_10": {
+    "name": "Integration, Polish and Packaging",
+    "depends_on": ["P01","P02","P03","P04","P05","P06","P07","P08","P09"],
+    "focus": [
+      "Full system integration",
+      "Role guard verification",
+      "All edge case handling",
+      "Encryption validation",
+      "UX polish",
+      "Android and Windows production packaging"
+    ],
+    "task": "Integrate all modules, verify role guards, handle all edge cases, polish UX, and package final builds for Android and Windows.",
+    
+    "integration_checklist": [
+      "Settings toggles hide/show navigation items dynamically",
+      "AppBar color updates instantly on role switch",
+      "SQLCipher opens with correct key",
+      "Wrong PIN never crashes app",
+      "5 bill tabs maintain independent state",
+      "Walk-in udhaar creates customer and bill in single transaction",
+      "Expense account purchases reflect in P&L and Khata",
+      "All 11 return steps fire atomically",
+      "Transliteration search works across product, billing, and customer modules",
+      "Windows keyboard shortcuts fully functional",
+      "Reprint button prints without creating new bill",
+      "Low stock alerts fire after commit",
+      "Reminder buttons respect settings toggles",
+      "First launch wizard never repeats after completion"
+    ],
+
+    "edge_cases": {
+      "security": [
+        "Wrong PIN → shake animation",
+        "3 consecutive failures → 30-second lockout",
+        "SQLCipher wrong key → show Gujarati error, never crash"
+      ],
+      "walkin": [
+        "Duplicate walk-in name warning",
+        "Walk-in return → cash only"
+      ],
+      "billing": [
+        "Finalize tab from different tab → show ✓ પૂર્ણ badge",
+        "Zero sell_price → block add, show Gujarati error",
+        "Out-of-stock product → disable add button",
+        "Credit limit exceeded: Admin override allowed, Employee blocked"
+      ],
+      "returns": [
+        "Return quantity cannot exceed original",
+        "Replace product must have sufficient stock",
+        "Deleted expense account retains snapshot text in old records"
+      ],
+      "roles": [
+        "Superadmin resets PIN → active session invalidated",
+        "Module disabled mid-session → redirect to home"
+      ],
+      "data": [
+        "Any transaction failure → full rollback",
+        "Printer not connected → show retry/skip dialog"
+      ]
+    },
+
+    "ux_polish": {
+      "loading_states": "Show Gujarati 'રાહ જુઓ...' during async operations",
+      "success_snackbar": {
+        "color": "#2E7D32",
+        "text_language": "Gujarati"
+      },
+      "error_snackbar": {
+        "color": "#B71C1C",
+        "text_language": "Gujarati"
+      },
+      "delete_confirmation": "Gujarati confirmation dialog",
+      "inputs": [
+        "Numeric fields open numpad only",
+        "Text fields auto-focus",
+        "Transliteration hint visible under product name"
+      ],
+      "android_specific": [
+        "Haptic feedback on taps",
+        "Pull-to-refresh on lists"
+      ],
+      "bill_tabs": [
+        "Unsaved draft shows orange dot",
+        "Finalized tab shows green checkmark"
+      ],
+      "pin_screen": [
+        "Role color immersive background",
+        "Wrong PIN shake + red flash"
+      ]
+    },
+
+    "packaging_android": {
+      "command": "flutter build apk --release",
+      "output_path": "build/app/outputs/flutter-apk/app-release.apk",
+      "installation": "Install via USB or share APK file"
+    },
+
+    "packaging_windows": {
+      "command": "flutter build windows --release",
+      "release_folder": "build/windows/x64/runner/Release/",
+      "installer_tool": "Inno Setup",
+      "files_required": [
+        "*.exe",
+        "*.dll",
+        "data folder recursive"
+      ],
+      "critical_note": "libsqlcipher.dll must be manually placed in Release folder before installer creation",
+      "sqlcipher_download": "https://github.com/sqlcipher/sqlcipher/releases",
+      "final_output": "KiranaApp_Setup_v2.0.exe"
+    },
+
+    "final_verification": [
+      "Fresh Android install → wizard runs correctly",
+      "Fresh Windows install → keyboard shortcuts functional",
+      "Wrong PIN lockout works",
+      "Module toggle OFF hides feature completely",
+      "Full bill cycle verified",
+      "Full udhaar cycle verified",
+      "Return and replace cycle verified",
+      "P&L numbers accurate",
+      "Transliteration search verified",
+      "Walk-in udhaar full flow tested"
+    ],
+
+    "expected_output": [
+      "Fully integrated, production-ready Flutter app",
+      "Stable SQLCipher encryption",
+      "All modules working together correctly",
+      "Android APK ready",
+      "Windows installer ready"
+    ]
+  }
+}
