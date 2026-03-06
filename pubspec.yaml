@@ -37,9 +37,22 @@ dependencies:
   flutter_secure_storage: ^9.0.0
   crypto: ^3.0.3
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+
+  # State management
+  flutter_riverpod: ^2.5.1
+
+  # Local database
+  sqflite: ^2.3.0
+  path: ^1.8.3
+
+  # Fonts & localization
+  google_fonts: ^6.2.1
+  intl: ^0.19.0
+
+  # File system paths for backup/export
+  path_provider: ^2.1.3
+  file_picker: ^8.0.0
 
 dev_dependencies:
   flutter_test:
