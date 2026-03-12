@@ -1,108 +1,157 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/models/item.dart';
-import '../../data/providers.dart';
+import '../../shared/models/product_model.dart';
 
-class CartLine {
-  CartLine({
-    required this.item,
-    required this.quantity,
-    required this.unitPrice,
+/// Single line in a bill draft.
+class BillLine {
+  BillLine({
+    required this.product,
+    required this.qtyGrams,
+    required this.amount,
   });
-  final Item item;
-  double quantity;
-  final double unitPrice;
 
-  double get lineTotal => quantity * unitPrice;
+  final Product product;
+
+  /// Stored in grams for weight-based units, or as "units" for count / litre.
+  final double qtyGrams;
+
+  /// Final line amount in ₹.
+  final double amount;
 }
 
-class CartState {
-  CartState({this.lines = const [], this.discountAmount = 0, this.customerId});
+/// Per-tab draft state – corresponds to one bill tab.
+class BillDraft {
+  BillDraft({
+    this.lines = const [],
+    this.discountAmount = 0,
+    this.customerId,
+    this.customerName,
+  });
 
-  final List<CartLine> lines;
+  final List<BillLine> lines;
   final double discountAmount;
   final int? customerId;
+  final String? customerName;
 
-  double get subtotal => lines.fold(0, (s, l) => s + l.lineTotal);
+  double get subtotal => lines.fold(0, (s, l) => s + l.amount);
   double get total => subtotal - discountAmount;
 
-  CartState copyWith({
-    List<CartLine>? lines,
+  BillDraft copyWith({
+    List<BillLine>? lines,
     double? discountAmount,
     int? customerId,
+    String? customerName,
   }) {
-    return CartState(
+    return BillDraft(
       lines: lines ?? this.lines,
       discountAmount: discountAmount ?? this.discountAmount,
       customerId: customerId ?? this.customerId,
+      customerName: customerName ?? this.customerName,
+    );
+  }
+
+  bool get isEmpty => lines.isEmpty && discountAmount == 0 && customerId == null;
+}
+
+/// Overall billing tabs state – holds five independent drafts.
+class BillingTabsState {
+  BillingTabsState({
+    required this.activeIndex,
+    required this.drafts,
+  }) : assert(drafts.length == 5, 'Must always maintain 5 bill drafts');
+
+  final int activeIndex;
+  final List<BillDraft> drafts;
+
+  BillDraft get activeDraft => drafts[activeIndex];
+
+  BillingTabsState copyWith({
+    int? activeIndex,
+    List<BillDraft>? drafts,
+  }) {
+    return BillingTabsState(
+      activeIndex: activeIndex ?? this.activeIndex,
+      drafts: drafts ?? this.drafts,
     );
   }
 }
 
-class CartNotifier extends StateNotifier<CartState> {
-  CartNotifier() : super(CartState());
+class BillingTabsNotifier extends StateNotifier<BillingTabsState> {
+  BillingTabsNotifier()
+      : super(
+          BillingTabsState(
+            activeIndex: 0,
+            drafts: List<BillDraft>.generate(5, (_) => BillDraft()),
+          ),
+        );
 
-  void addItem(Item item, {double quantity = 1}) {
-    final existing = state.lines.where((l) => l.item.id == item.id).toList();
-    if (existing.isNotEmpty) {
-      final idx = state.lines.indexWhere((l) => l.item.id == item.id);
-      final updated = List<CartLine>.from(state.lines);
-      updated[idx] = CartLine(
-        item: item,
-        quantity: updated[idx].quantity + quantity,
-        unitPrice: item.salePrice,
-      );
-      state = state.copyWith(lines: updated);
-    } else {
-      state = state.copyWith(
-        lines: [
-          ...state.lines,
-          CartLine(item: item, quantity: quantity, unitPrice: item.salePrice),
-        ],
-      );
-    }
+  void switchToTab(int index) {
+    if (index < 0 || index >= state.drafts.length) return;
+    state = state.copyWith(activeIndex: index);
   }
 
-  void updateQuantity(int index, double qty) {
-    if (qty <= 0) {
-      removeAt(index);
-      return;
-    }
-    final updated = List<CartLine>.from(state.lines);
-    updated[index] = CartLine(
-      item: updated[index].item,
-      quantity: qty,
-      unitPrice: updated[index].unitPrice,
-    );
-    state = state.copyWith(lines: updated);
+  void addLineToActive(BillLine line) {
+    final drafts = [...state.drafts];
+    final current = drafts[state.activeIndex];
+    drafts[state.activeIndex] = current.copyWith(lines: [...current.lines, line]);
+    state = state.copyWith(drafts: drafts);
   }
 
-  void removeAt(int index) {
-    final updated = List<CartLine>.from(state.lines)..removeAt(index);
-    state = state.copyWith(lines: updated);
+  void updateLineInActive(int index, BillLine updatedLine) {
+    final drafts = [...state.drafts];
+    final current = drafts[state.activeIndex];
+    if (index < 0 || index >= current.lines.length) return;
+    final newLines = [...current.lines]..[index] = updatedLine;
+    drafts[state.activeIndex] = current.copyWith(lines: newLines);
+    state = state.copyWith(drafts: drafts);
   }
 
-  void setDiscount(double amount) {
-    state = state.copyWith(discountAmount: amount);
+  void removeLineFromActive(int index) {
+    final drafts = [...state.drafts];
+    final current = drafts[state.activeIndex];
+    if (index < 0 || index >= current.lines.length) return;
+    final newLines = [...current.lines]..removeAt(index);
+    drafts[state.activeIndex] = current.copyWith(lines: newLines);
+    state = state.copyWith(drafts: drafts);
   }
 
-  void setCustomer(int? id) {
-    state = state.copyWith(customerId: id);
+  void setDiscountForActive(double amount) {
+    final drafts = [...state.drafts];
+    final current = drafts[state.activeIndex];
+    drafts[state.activeIndex] = current.copyWith(discountAmount: amount);
+    state = state.copyWith(drafts: drafts);
   }
 
-  void clear() {
-    state = CartState();
+  void setCustomerForActive({
+    required int? customerId,
+    required String? customerName,
+  }) {
+    final drafts = [...state.drafts];
+    final current = drafts[state.activeIndex];
+    drafts[state.activeIndex] =
+        current.copyWith(customerId: customerId, customerName: customerName);
+    state = state.copyWith(drafts: drafts);
+  }
+
+  /// Clears only the currently active tab draft.
+  void clearActive() {
+    final drafts = [...state.drafts];
+    drafts[state.activeIndex] = BillDraft();
+    state = state.copyWith(drafts: drafts);
+  }
+
+  /// Clears a specific tab (used by "close tab" behaviour).
+  void clearTab(int index) {
+    if (index < 0 || index >= state.drafts.length) return;
+    final drafts = [...state.drafts];
+    drafts[index] = BillDraft();
+    state = state.copyWith(drafts: drafts);
   }
 }
 
-final cartProvider = StateNotifierProvider<CartNotifier, CartState>((ref) {
-  return CartNotifier();
+/// Riverpod provider exposing the billing tabs state.
+final billingTabsProvider =
+    StateNotifierProvider<BillingTabsNotifier, BillingTabsState>((ref) {
+  return BillingTabsNotifier();
 });
 
-final itemSearchQueryProvider = StateProvider<String>((ref) => '');
-
-final billingItemsProvider = FutureProvider<List<Item>>((ref) async {
-  final repo = await ref.watch(itemRepositoryFutureProvider.future);
-  final query = ref.watch(itemSearchQueryProvider);
-  return repo.search(query, lowStockOnly: false);
-});

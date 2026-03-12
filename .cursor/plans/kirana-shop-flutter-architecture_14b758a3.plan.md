@@ -101,9 +101,9 @@ We’ll create a small, normalized schema with clear relations, designed so a fu
     - `balance_after` (REAL, cached running balance for fast UI)
   - `**purchases`** (stock purchase entries, optional v1 detail level)
     - `id`, `date_time`, `supplier_name`, `total_amount`, etc.
-  - `**purchase_items**`
+  - `**purchase_items`**
     - `id`, `purchase_id`, `item_id`, `quantity`, `unit_cost`, `line_total`.
-  - `**users**`
+  - `**users`**
     - `id` (PK)
     - `name` (TEXT)
     - `pin` (TEXT hashed or stored simply for local-only)

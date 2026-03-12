@@ -6,7 +6,6 @@ import '../../core/widgets/numpad.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../data/models/item.dart';
 import '../../data/providers.dart';
-import '../billing/billing_providers.dart';
 import 'inventory_providers.dart';
 
 class ItemEditScreen extends ConsumerStatefulWidget {
@@ -131,7 +130,6 @@ class _ItemEditScreenState extends ConsumerState<ItemEditScreen> {
         ));
       }
       ref.invalidate(itemListProvider);
-      ref.invalidate(billingItemsProvider);
       if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(

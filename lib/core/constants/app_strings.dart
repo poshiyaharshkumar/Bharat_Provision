@@ -60,5 +60,10 @@ class AppStrings {
   // Product actions (list bottom sheet)
   static const String productActionEdit = 'ઉત્પાદ બદલો';
   static const String productActionDelete = 'ઉત્પાદ કાઢી નાખો';
+
+  // Billing (P04)
+  static const String billingTitle = 'બિલિંગ';
+  static const String addButton = 'ઉમેરો';
+  static const String clearButton = 'ક્લિયર કરો';
 }
 

@@ -10,7 +10,6 @@ import '../../core/widgets/confirm_dialog.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../data/db/app_database.dart';
 import '../../data/providers.dart';
-import '../billing/billing_providers.dart';
 import '../inventory/inventory_providers.dart';
 import '../khata/khata_providers.dart';
 import 'settings_providers.dart';
@@ -124,7 +123,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       ref.invalidate(itemListProvider);
       ref.invalidate(customerListProvider);
-      ref.invalidate(billingItemsProvider);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

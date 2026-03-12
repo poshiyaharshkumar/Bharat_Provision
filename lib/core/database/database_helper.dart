@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:path/path.dart' as p;
-import 'package:sqflite_sqlcipher/sqflite.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart' as sqflite_ffi;
+import 'package:sqflite_sqlcipher/sqflite.dart' as sqlcipher;
 
 import '../auth/pin_hasher.dart';
 
@@ -13,10 +16,10 @@ class DatabaseHelper {
   static const int schemaVersion = 1;
   static const String dbFileName = 'kirana.db';
 
-  Database? _db;
+  dynamic _db;
   String? _password;
 
-  Future<Database> get database async {
+  Future<dynamic> get database async {
     if (_db != null) return _db!;
     _db = await _openEncrypted();
     return _db!;
@@ -29,30 +32,56 @@ class DatabaseHelper {
     _db = await _openEncrypted();
   }
 
-  Future<Database> _openEncrypted() async {
-    final dbPath = await getDatabasesPath();
-    final path = p.join(dbPath, dbFileName);
+  Future<dynamic> _openEncrypted() async {
+    // On Android/iOS, use sqlcipher plugin with password.
+    if (Platform.isAndroid || Platform.isIOS) {
+      final dbPath = await sqlcipher.getDatabasesPath();
+      final path = p.join(dbPath, dbFileName);
 
-    final password = _password ?? PinHasher.sha256('0000');
+      final password = _password ?? PinHasher.sha256('0000');
 
-    return openDatabase(
+      return sqlcipher.openDatabase(
+        path,
+        version: schemaVersion,
+        password: password,
+        onConfigure: (db) async {
+          await db.execute('PRAGMA foreign_keys = ON');
+        },
+        onCreate: (db, version) async {
+          await _createSchema(db);
+          await _insertDefaultData(db);
+        },
+        onUpgrade: (db, oldVersion, newVersion) async {
+          await _createSchema(db);
+        },
+      );
+    }
+
+    // On desktop (Windows/Linux/macOS), fall back to sqflite_common_ffi without encryption.
+    sqflite_ffi.sqfliteFfiInit();
+    final supportDir = await getApplicationSupportDirectory();
+    final path = p.join(supportDir.path, dbFileName);
+    final factory = sqflite_ffi.databaseFactoryFfi;
+
+    return factory.openDatabase(
       path,
-      version: schemaVersion,
-      password: password,
-      onConfigure: (db) async {
-        await db.execute('PRAGMA foreign_keys = ON');
-      },
-      onCreate: (db, version) async {
-        await _createSchema(db);
-        await _insertDefaultData(db);
-      },
-      onUpgrade: (db, oldVersion, newVersion) async {
-        await _createSchema(db);
-      },
+      options: sqflite_ffi.OpenDatabaseOptions(
+        version: schemaVersion,
+        onConfigure: (db) async {
+          await db.execute('PRAGMA foreign_keys = ON');
+        },
+        onCreate: (db, version) async {
+          await _createSchema(db);
+          await _insertDefaultData(db);
+        },
+        onUpgrade: (db, oldVersion, newVersion) async {
+          await _createSchema(db);
+        },
+      ),
     );
   }
 
-  Future<void> _createSchema(Database db) async {
+  Future<void> _createSchema(dynamic db) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS settings (
         key TEXT PRIMARY KEY,
@@ -385,14 +414,14 @@ class DatabaseHelper {
     ''');
   }
 
-  Future<void> _insertDefaultData(Database db) async {
+  Future<void> _insertDefaultData(dynamic db) async {
     await insertDefaultSettings(db);
     await insertDefaultExpenseAccounts(db);
     await insertTransliterationDictionary(db);
   }
 
-  Future<void> insertDefaultSettings(Database db) async {
-    final existing = Sqflite.firstIntValue(
+  Future<void> insertDefaultSettings(dynamic db) async {
+    final existing = sqlcipher.Sqflite.firstIntValue(
       await db.rawQuery('SELECT COUNT(*) FROM settings'),
     );
     if ((existing ?? 0) > 0) return;
@@ -435,8 +464,8 @@ class DatabaseHelper {
     await batch.commit(noResult: true);
   }
 
-  Future<void> insertDefaultExpenseAccounts(Database db) async {
-    final existing = Sqflite.firstIntValue(
+  Future<void> insertDefaultExpenseAccounts(dynamic db) async {
+    final existing = sqlcipher.Sqflite.firstIntValue(
       await db.rawQuery('SELECT COUNT(*) FROM expense_accounts'),
     );
     if ((existing ?? 0) > 0) return;
@@ -492,8 +521,8 @@ class DatabaseHelper {
     await batch.commit(noResult: true);
   }
 
-  Future<void> insertTransliterationDictionary(Database db) async {
-    final existing = Sqflite.firstIntValue(
+  Future<void> insertTransliterationDictionary(dynamic db) async {
+    final existing = sqlcipher.Sqflite.firstIntValue(
       await db.rawQuery('SELECT COUNT(*) FROM transliteration_dictionary'),
     );
     if ((existing ?? 0) > 0) return;
@@ -782,7 +811,7 @@ class DatabaseHelper {
     return db.rawQuery(sql, arguments);
   }
 
-  Future<T> runInTransaction<T>(Future<T> Function(Transaction txn) action) async {
+  Future<T> runInTransaction<T>(Future<T> Function(dynamic txn) action) async {
     final db = await database;
     return db.transaction<T>((txn) async => action(txn));
   }

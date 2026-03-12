@@ -23,8 +23,10 @@ class ProductProvider extends StateNotifier<AsyncValue<List<Product>>> {
         'products',
         where: 'is_active = 1',
         orderBy: 'name_gujarati COLLATE NOCASE',
-      );
-      final products = rows.map(Product.fromMap).toList();
+      ) as List<Map<String, Object?>>;
+      final products = rows
+          .map<Product>((m) => Product.fromMap(m as Map<String, dynamic>))
+          .toList();
       state = AsyncValue.data(products);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -132,9 +134,11 @@ class ProductProvider extends StateNotifier<AsyncValue<List<Product>>> {
             p.transliteration_keys LIKE ? OR
             t.phonetic_key LIKE ?
           )
-      ''', [like, like, like, like, like]);
+      ''', [like, like, like, like, like]) as List<Map<String, Object?>>;
 
-      final products = rows.map(Product.fromMap).toList();
+      final products = rows
+          .map<Product>((m) => Product.fromMap(m as Map<String, dynamic>))
+          .toList();
 
       // Fuzzy ranking
       final queryLower = q.toLowerCase();
@@ -169,8 +173,10 @@ class ProductProvider extends StateNotifier<AsyncValue<List<Product>>> {
         SELECT * FROM products
         WHERE is_active = 1
           AND stock_qty <= min_stock_qty
-      ''');
-      return rows.map(Product.fromMap).toList();
+      ''') as List<Map<String, Object?>>;
+      return rows
+          .map<Product>((m) => Product.fromMap(m as Map<String, dynamic>))
+          .toList();
     } catch (_) {
       return [];
     }
