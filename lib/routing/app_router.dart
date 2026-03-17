@@ -9,6 +9,9 @@ import '../features/khata/customer_list_screen.dart';
 import '../features/khata/customer_khata_detail_screen.dart';
 import '../features/khata/customer_edit_screen.dart';
 import '../features/reports/reports_home_screen.dart';
+import '../features/returns/return_history_screen.dart';
+import '../features/returns/return_screen.dart';
+import '../features/returns/replace_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/stock/stock_dashboard_screen.dart';
 import '../features/stock/add_stock_screen.dart';
@@ -36,6 +39,9 @@ class AppRouter {
   static const String stockDashboard = '/stock';
   static const String stockAdd = '/stock/add';
   static const String stockHistory = '/stock/history';
+  static const String returnsNew = '/returns/new';
+  static const String returnsReplace = '/returns/replace';
+  static const String returnsHistory = '/returns/history';
   static const String udhaarDashboard = '/udhaar';
   static const String udhaarCustomer = '/udhaar/customer';
   static const String udhaarCollect = '/udhaar/collect';
@@ -92,15 +98,21 @@ class AppRouter {
         final productId = args?['productId'] as int?;
         final productName = args?['productName'] as String?;
         if (productId != null && productName != null) {
-          return _build(StockHistoryScreen(productId: productId, productName: productName));
+          return _build(
+            StockHistoryScreen(productId: productId, productName: productName),
+          );
         }
         return _build(
           Scaffold(
-            body: Center(
-              child: Text('Not found: ${routeSettings.name}'),
-            ),
+            body: Center(child: Text('Not found: ${routeSettings.name}')),
           ),
         );
+      case returnsNew:
+        return _build(const ReturnScreen());
+      case returnsReplace:
+        return _build(const ReplaceScreen());
+      case returnsHistory:
+        return _build(const ReturnHistoryScreen());
       case udhaarDashboard:
         return _buildShell(5, const UdhaarDashboardScreen());
       case udhaarCustomer:
@@ -115,9 +127,7 @@ class AppRouter {
       default:
         return _build(
           Scaffold(
-            body: Center(
-              child: Text('Not found: ${routeSettings.name}'),
-            ),
+            body: Center(child: Text('Not found: ${routeSettings.name}')),
           ),
         );
     }

@@ -52,7 +52,7 @@ class _StockDashboardScreenState extends ConsumerState<StockDashboardScreen> {
           summaryAsync.when(
             data: (s) => _SummaryRow(summary: s),
             loading: () => const SizedBox(height: 56, child: Center(child: LinearProgressIndicator())),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
           ),
 
           // ── Search bar ─────────────────────────────────────────────────
@@ -143,7 +143,7 @@ class _StockDashboardScreenState extends ConsumerState<StockDashboardScreen> {
               );
             },
             loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
           ),
 
           const SizedBox(height: 4),

@@ -6,16 +6,28 @@ class ReportRepository {
   final Database _db;
 
   Future<SalesSummary> getSalesSummary(int startEpoch, int endEpoch) async {
+    // Returns should reduce the sales total on the day of return (not original bill date).
+    final startIso = DateTime.fromMillisecondsSinceEpoch(
+      startEpoch,
+    ).toIso8601String();
+    final endIso = DateTime.fromMillisecondsSinceEpoch(
+      endEpoch,
+    ).toIso8601String();
+
     final result = await _db.rawQuery(
       '''
       SELECT
         COUNT(*) as bill_count,
-        COALESCE(SUM(total_amount), 0) as total_sales,
+        COALESCE(SUM(total_amount), 0)
+          - COALESCE((
+              SELECT SUM(total_return_value) FROM returns
+              WHERE return_date >= ? AND return_date <= ?
+            ), 0) as total_sales,
         COALESCE(AVG(total_amount), 0) as avg_bill
       FROM bills
       WHERE date_time >= ? AND date_time <= ?
       ''',
-      [startEpoch, endEpoch],
+      [startIso, endIso, startEpoch, endEpoch],
     );
     final row = result.first;
     return SalesSummary(
@@ -43,11 +55,13 @@ class ReportRepository {
       final id = c['id'] as int;
       final balance = latestBalance[id] ?? 0;
       if (balance > 0) {
-        out.add(OutstandingCustomer(
-          id: id,
-          name: c['name'] as String,
-          balance: balance,
-        ));
+        out.add(
+          OutstandingCustomer(
+            id: id,
+            name: c['name'] as String,
+            balance: balance,
+          ),
+        );
       }
     }
     out.sort((a, b) => b.balance.compareTo(a.balance));

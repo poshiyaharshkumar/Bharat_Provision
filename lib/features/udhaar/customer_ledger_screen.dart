@@ -20,8 +20,7 @@ class CustomerLedgerScreen extends ConsumerStatefulWidget {
       _CustomerLedgerScreenState();
 }
 
-class _CustomerLedgerScreenState
-    extends ConsumerState<CustomerLedgerScreen> {
+class _CustomerLedgerScreenState extends ConsumerState<CustomerLedgerScreen> {
   String? _selectedMonth; // null = all
   List<LedgerRow> _ledgerRows = [];
   bool _loadingLedger = false;
@@ -44,8 +43,10 @@ class _CustomerLedgerScreenState
     });
     try {
       final repo = ref.read(udhaarRepositoryProvider);
-      final rows = await repo.getLedgerEntries(widget.customerId,
-          monthYear: _selectedMonth);
+      final rows = await repo.getLedgerEntries(
+        widget.customerId,
+        monthYear: _selectedMonth,
+      );
       if (mounted) {
         setState(() {
           _ledgerRows = rows;
@@ -85,24 +86,26 @@ class _CustomerLedgerScreenState
               controller: phoneCtrl,
               autofocus: true,
               keyboardType: TextInputType.phone,
-              decoration:
-                  const InputDecoration(labelText: 'ફોન નંબર *'),
+              decoration: const InputDecoration(labelText: 'ફોન નંબર *'),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: addressCtrl,
-              decoration:
-                  const InputDecoration(labelText: 'સરનામું (વૈકલ્પિક)'),
+              decoration: const InputDecoration(
+                labelText: 'સરનામું (વૈકલ્પિક)',
+              ),
             ),
           ],
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('રદ')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('રદ'),
+          ),
           ElevatedButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('સ્વીકારો')),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('સ્વીકારો'),
+          ),
         ],
       ),
     );
@@ -118,12 +121,14 @@ class _CustomerLedgerScreenState
       await _loadLedger();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('ખાતું નિયમિત ગ્રાહક બન્યું')));
+          const SnackBar(content: Text('ખાતું નિયમિત ગ્રાહક બન્યું')),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('ભૂલ: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('ભૂલ: $e')));
       }
     }
   }
@@ -137,7 +142,7 @@ class _CustomerLedgerScreenState
         title: customerAsync.when(
           data: (c) => Text(c?.nameGujarati ?? 'ઉધાર ખાતું'),
           loading: () => const Text('ઉધાર ખાતું'),
-          error: (_, __) => const Text('ઉધાર ખાતું'),
+          error: (_, _) => const Text('ઉધાર ખાતું'),
         ),
       ),
       body: customerAsync.when(
@@ -173,43 +178,49 @@ class _CustomerLedgerScreenState
                   Expanded(
                     child: Text(
                       customer.nameGujarati,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   if (isWalkin)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.warning.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text('👤 નવો',
-                          style: TextStyle(
-                              color: AppColors.warning,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12)),
+                      child: Text(
+                        '👤 નવો',
+                        style: TextStyle(
+                          color: AppColors.warning,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
                 ],
               ),
               if (customer.phone != null && customer.phone!.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 2),
-                  child: Text(customer.phone!,
-                      style: Theme.of(context).textTheme.bodyMedium),
+                  child: Text(
+                    customer.phone!,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
                 ),
               const SizedBox(height: 4),
               Text(
                 'બાકી: ${formatCurrency(customer.totalOutstanding)}',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: customer.totalOutstanding > 0
-                          ? AppColors.alert
-                          : AppColors.success,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: customer.totalOutstanding > 0
+                      ? AppColors.alert
+                      : AppColors.success,
+                ),
               ),
               if (isWalkin)
                 TextButton.icon(
@@ -217,8 +228,9 @@ class _CustomerLedgerScreenState
                   icon: const Icon(Icons.upgrade, size: 18),
                   label: const Text('નિયમિત ગ્રાહક બનાવો'),
                   style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      foregroundColor: AppColors.primary),
+                    padding: EdgeInsets.zero,
+                    foregroundColor: AppColors.primary,
+                  ),
                 ),
             ],
           ),
@@ -233,14 +245,18 @@ class _CustomerLedgerScreenState
                   icon: Icons.payments,
                   label: 'ચૂકવણી લો',
                   color: AppColors.success,
-                  onPressed: () => Navigator.of(context).pushNamed(
-                    AppRouter.udhaarCollect,
-                    arguments: widget.customerId,
-                  ).then((_) {
-                    ref.invalidate(udhaarCustomerProvider(widget.customerId));
-                    ref.invalidate(udhaarCustomerListProvider);
-                    _loadLedger();
-                  }),
+                  onPressed: () => Navigator.of(context)
+                      .pushNamed(
+                        AppRouter.udhaarCollect,
+                        arguments: widget.customerId,
+                      )
+                      .then((_) {
+                        ref.invalidate(
+                          udhaarCustomerProvider(widget.customerId),
+                        );
+                        ref.invalidate(udhaarCustomerListProvider);
+                        _loadLedger();
+                      }),
                 ),
               ),
               const SizedBox(width: 8),
@@ -265,8 +281,10 @@ class _CustomerLedgerScreenState
                     context: context,
                     isScrollControlled: true,
                     shape: const RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.vertical(top: Radius.circular(20))),
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
+                    ),
                     builder: (_) => ReminderBottomSheet(customer: customer),
                   ),
                 ),
@@ -289,43 +307,42 @@ class _CustomerLedgerScreenState
           child: _loadingLedger
               ? const Center(child: CircularProgressIndicator())
               : _ledgerError != null
-                  ? Center(child: Text('ભૂલ: $_ledgerError'))
-                  : _ledgerRows.isEmpty
-                      ? const Center(child: Text('કોઈ એન્ટ્રી નથી'))
-                      : ListView.separated(
-                          padding: const EdgeInsets.only(bottom: 24),
-                          itemCount: _ledgerRows.length,
-                          separatorBuilder: (_, __) =>
-                              const Divider(height: 1, indent: 16),
-                          itemBuilder: (ctx, i) {
-                            final row = _ledgerRows[i];
-                            return _LedgerTile(
-                              row: row,
-                              isExpanded: row.entry.billId != null &&
-                                  _expandedBillIds
-                                      .contains(row.entry.billId),
-                              billItems: row.entry.billId != null
-                                  ? _billItemsCache[row.entry.billId!]
-                                  : null,
-                              onToggle: row.entry.billId == null
-                                  ? null
-                                  : () async {
-                                      final billId = row.entry.billId!;
-                                      if (!_expandedBillIds.contains(billId)) {
-                                        await _loadBillItems(billId);
-                                      }
-                                      setState(() {
-                                        if (_expandedBillIds
-                                            .contains(billId)) {
-                                          _expandedBillIds.remove(billId);
-                                        } else {
-                                          _expandedBillIds.add(billId);
-                                        }
-                                      });
-                                    },
-                            );
-                          },
-                        ),
+              ? Center(child: Text('ભૂલ: $_ledgerError'))
+              : _ledgerRows.isEmpty
+              ? const Center(child: Text('કોઈ એન્ટ્રી નથી'))
+              : ListView.separated(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  itemCount: _ledgerRows.length,
+                  separatorBuilder: (_, _) =>
+                      const Divider(height: 1, indent: 16),
+                  itemBuilder: (ctx, i) {
+                    final row = _ledgerRows[i];
+                    return _LedgerTile(
+                      row: row,
+                      isExpanded:
+                          row.entry.billId != null &&
+                          _expandedBillIds.contains(row.entry.billId),
+                      billItems: row.entry.billId != null
+                          ? _billItemsCache[row.entry.billId!]
+                          : null,
+                      onToggle: row.entry.billId == null
+                          ? null
+                          : () async {
+                              final billId = row.entry.billId!;
+                              if (!_expandedBillIds.contains(billId)) {
+                                await _loadBillItems(billId);
+                              }
+                              setState(() {
+                                if (_expandedBillIds.contains(billId)) {
+                                  _expandedBillIds.remove(billId);
+                                } else {
+                                  _expandedBillIds.add(billId);
+                                }
+                              });
+                            },
+                    );
+                  },
+                ),
         ),
       ],
     );
@@ -353,24 +370,27 @@ class _MonthFilter extends ConsumerWidget {
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           child: DropdownButtonFormField<String?>(
-            value: selectedMonth,
+            initialValue: selectedMonth,
             isDense: true,
             decoration: const InputDecoration(
-                labelText: 'મહિના પ્રમાણે ફિલ્ટર',
-                contentPadding:
-                    EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+              labelText: 'મહિના પ્રમાણે ફિલ્ટર',
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
             items: [
-              const DropdownMenuItem<String?>(
-                  value: null, child: Text('બધા')),
-              ...months.map((m) => DropdownMenuItem<String?>(
-                  value: m, child: Text(_formatMonth(m)))),
+              const DropdownMenuItem<String?>(value: null, child: Text('બધા')),
+              ...months.map(
+                (m) => DropdownMenuItem<String?>(
+                  value: m,
+                  child: Text(_formatMonth(m)),
+                ),
+              ),
             ],
             onChanged: onChanged,
           ),
         );
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 
@@ -378,8 +398,19 @@ class _MonthFilter extends ConsumerWidget {
     final parts = monthYear.split('-');
     if (parts.length < 2) return monthYear;
     const months = [
-      '', 'જાન્યુ', 'ફેબ્રુ', 'માર્ચ', 'એપ્રિ', 'મે', 'જૂન',
-      'જુલાઈ', 'ઓગ', 'સ્પ્ટે', 'ઓક્ટો', 'નવે', 'ડિસે',
+      '',
+      'જાન્યુ',
+      'ફેબ્રુ',
+      'માર્ચ',
+      'એપ્રિ',
+      'મે',
+      'જૂન',
+      'જુલાઈ',
+      'ઓગ',
+      'સ્પ્ટે',
+      'ઓક્ટો',
+      'નવે',
+      'ડિસે',
     ];
     final mn = int.tryParse(parts[1]) ?? 0;
     final name = mn >= 1 && mn <= 12 ? months[mn] : parts[1];
@@ -406,8 +437,9 @@ class _LedgerTile extends StatelessWidget {
     final entry = row.entry;
     final isCredit = entry.transactionType == 'credit';
     final color = isCredit ? AppColors.alert : AppColors.success;
-    final label =
-        isCredit ? 'ખરીદી${row.billNumber != null ? ' #${row.billNumber}' : ''}' : '✓ ચૂક્વ્યું';
+    final label = isCredit
+        ? 'ખરીદી${row.billNumber != null ? ' #${row.billNumber}' : ''}'
+        : '✓ ચૂક્વ્યું';
     final sign = isCredit ? '+' : '-';
 
     DateTime? date;
@@ -430,10 +462,9 @@ class _LedgerTile extends StatelessWidget {
                   width: 60,
                   child: Text(
                     date != null ? formatDateDDMMYYYY(date) : '',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: Colors.grey[600]),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -444,7 +475,9 @@ class _LedgerTile extends StatelessWidget {
                       Text(
                         label,
                         style: TextStyle(
-                            color: color, fontWeight: FontWeight.w600),
+                          color: color,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       if (isCredit && onToggle != null) ...[
                         const SizedBox(width: 4),
@@ -462,17 +495,15 @@ class _LedgerTile extends StatelessWidget {
                 // Amount
                 Text(
                   '$sign${formatCurrency(entry.amount)}',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, color: color),
+                  style: TextStyle(fontWeight: FontWeight.bold, color: color),
                 ),
                 const SizedBox(width: 12),
                 // Running balance
                 Text(
                   'બા: ${formatCurrency(entry.runningBalance)}',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: Colors.grey[600]),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -496,14 +527,20 @@ class _BillItemsPanel extends StatelessWidget {
     if (billItems == null) {
       return const Padding(
         padding: EdgeInsets.only(left: 84, bottom: 8),
-        child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+        child: SizedBox(
+          height: 20,
+          width: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
       );
     }
     if (billItems!.isEmpty) {
       return const Padding(
         padding: EdgeInsets.only(left: 84, bottom: 8),
-        child: Text('આઈટ્મ વિગત ઉપલ્બ્ધ નથી',
-            style: TextStyle(color: Colors.grey, fontSize: 12)),
+        child: Text(
+          'આઈટ્મ વિગત ઉપલ્બ્ધ નથી',
+          style: TextStyle(color: Colors.grey, fontSize: 12),
+        ),
       );
     }
     return Container(
@@ -516,31 +553,75 @@ class _BillItemsPanel extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: billItems!
-            .map((item) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 3),
-                  child: Row(
+        children: billItems!.map((item) {
+          final returned = item.isReturned;
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          item.productNameSnapshot ?? 'ઉત્પાદ #${item.productId}',
-                          style: const TextStyle(fontSize: 13),
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.productNameSnapshot ??
+                                  'ઉત્પાદ #${item.productId}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                decoration: returned
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
+                            ),
+                          ),
+                          if (returned)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                'પાછું આવ્યું',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                      Text(
-                        '${item.qty}',
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                      const SizedBox(width: 16),
-                      Text(
-                        formatCurrency(item.amount),
-                        style: const TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w600),
-                      ),
+                      if (returned) const SizedBox(height: 2),
                     ],
                   ),
-                ))
-            .toList(),
+                ),
+                Text(
+                  '${item.qty}',
+                  style: TextStyle(
+                    fontSize: 13,
+                    decoration: returned ? TextDecoration.lineThrough : null,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  formatCurrency(item.amount),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    decoration: returned ? TextDecoration.lineThrough : null,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -565,9 +646,11 @@ class _ActionButton extends StatelessWidget {
     return OutlinedButton.icon(
       onPressed: onPressed,
       icon: Icon(icon, size: 18, color: color),
-      label: Text(label,
-          style: TextStyle(color: color, fontSize: 12),
-          overflow: TextOverflow.ellipsis),
+      label: Text(
+        label,
+        style: TextStyle(color: color, fontSize: 12),
+        overflow: TextOverflow.ellipsis,
+      ),
       style: OutlinedButton.styleFrom(
         side: BorderSide(color: color.withValues(alpha: 0.5)),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),

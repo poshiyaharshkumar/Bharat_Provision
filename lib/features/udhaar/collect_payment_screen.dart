@@ -89,7 +89,7 @@ class _CollectPaymentScreenState
         title: customerAsync.when(
           data: (c) => Text('ચૂકવણી — ${c?.nameGujarati ?? ''}'),
           loading: () => const Text('ચૂકવણી'),
-          error: (_, __) => const Text('ચૂકવણી'),
+          error: (_, _) => const Text('ચૂકવણી'),
         ),
         bottom: TabBar(
           controller: _tabController,
@@ -203,7 +203,7 @@ class _BillSpecificTab extends ConsumerWidget {
           : ListView.separated(
               padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: bills.length,
-              separatorBuilder: (_, __) =>
+              separatorBuilder: (_, _) =>
                   const Divider(height: 1, indent: 16),
               itemBuilder: (ctx, i) => _UnpaidBillTile(
                 row: bills[i],

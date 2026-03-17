@@ -137,7 +137,7 @@ class _AddStockScreenState extends ConsumerState<AddStockScreen> {
                   });
                 }
                 return DropdownButtonFormField<ExpenseAccount>(
-                  value: _selectedExpenseAccount,
+                  initialValue: _selectedExpenseAccount,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                   ),

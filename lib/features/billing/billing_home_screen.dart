@@ -6,6 +6,7 @@ import '../../core/constants/app_strings.dart' as strings;
 import '../../core/utils/currency_format.dart';
 import '../../core/utils/weight_calculator.dart';
 import '../../data/models/item.dart';
+import '../../routing/app_router.dart';
 import 'billing_providers.dart';
 import '../../core/services/notification_service.dart';
 import '../../features/stock/stock_providers.dart';
@@ -20,7 +21,7 @@ class BillingHomeScreen extends ConsumerStatefulWidget {
 
 class _BillingHomeScreenState extends ConsumerState<BillingHomeScreen> {
   final _searchController = TextEditingController();
-  List<BillLineItem> _billLines = [];
+  final List<BillLineItem> _billLines = [];
   double _discount = 0;
   String? _bannerMessage;
 
@@ -46,7 +47,10 @@ class _BillingHomeScreenState extends ConsumerState<BillingHomeScreen> {
   Future<void> _saveBill() async {
     // Save bill logic (not shown here)
     // After saving, check stock alerts for all products in bill
-    final productIds = _billLines.map((l) => l.item.id).whereType<int>().toList();
+    final productIds = _billLines
+        .map((l) => l.item.id)
+        .whereType<int>()
+        .toList();
     final stockRepo = ref.read(stockRepositoryProvider);
     final alertResult = await stockRepo.checkStockAlerts(productIds);
     final userRole = await _getCurrentUserRole();
@@ -156,8 +160,9 @@ class _BillingHomeScreenState extends ConsumerState<BillingHomeScreen> {
                       ),
                       onChanged: (v) {
                         final parsed = double.tryParse(v);
-                        if (parsed != null)
+                        if (parsed != null) {
                           setDialogState(() => amountPaid = parsed);
+                        }
                       },
                     ),
                     const SizedBox(height: 8),
@@ -180,8 +185,9 @@ class _BillingHomeScreenState extends ConsumerState<BillingHomeScreen> {
                       ),
                       onChanged: (v) {
                         final parsed = double.tryParse(v);
-                        if (parsed != null)
+                        if (parsed != null) {
                           setDialogState(() => weightGrams = parsed);
+                        }
                       },
                     ),
                     const SizedBox(height: 8),
@@ -324,7 +330,7 @@ class _BillingHomeScreenState extends ConsumerState<BillingHomeScreen> {
     buffer.writeln('            બિલ');
     buffer.writeln('===============================\n');
     for (var line in _billLines) {
-      buffer.writeln('${line.item.nameGu}');
+      buffer.writeln(line.item.nameGu);
       buffer.writeln(
         '  ${WeightCalculator.formatWeight(line.qtyGrams)}  ${formatCurrency(line.amount)}',
       );
@@ -356,6 +362,25 @@ class _BillingHomeScreenState extends ConsumerState<BillingHomeScreen> {
             onPressed: _printBill,
             tooltip: 'બિલ છાપો',
           ),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'returns') {
+                Navigator.of(context).pushNamed(AppRouter.returnsNew);
+              } else if (value == 'replace') {
+                Navigator.of(context).pushNamed(AppRouter.returnsReplace);
+              } else if (value == 'history') {
+                Navigator.of(context).pushNamed(AppRouter.returnsHistory);
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'returns', child: Text('પાછું આપવું')),
+              const PopupMenuItem(value: 'replace', child: Text('બદલવું')),
+              const PopupMenuItem(
+                value: 'history',
+                child: Text('પાછું આપવાનો ઇતિહાસ'),
+              ),
+            ],
+          ),
         ],
       ),
       body: Column(
@@ -371,7 +396,10 @@ class _BillingHomeScreenState extends ConsumerState<BillingHomeScreen> {
                   Expanded(
                     child: Text(
                       _bannerMessage!,
-                      style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],

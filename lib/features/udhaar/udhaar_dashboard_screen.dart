@@ -77,7 +77,7 @@ class _UdhaarDashboardScreenState
             loading: () => const SizedBox(
                 height: 80,
                 child: Center(child: LinearProgressIndicator())),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
           ),
           // ── Customer list ───────────────────────────────────────────────
           Expanded(

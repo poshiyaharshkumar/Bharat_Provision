@@ -43,7 +43,7 @@ class _FinalTotalScreenState extends ConsumerState<FinalTotalScreen> {
         title: dataAsync.when(
           data: (d) => Text(d.customer.nameGujarati),
           loading: () => const Text('Final Total'),
-          error: (_, __) => const Text('Final Total'),
+          error: (_, _) => const Text('Final Total'),
         ),
       ),
       body: dataAsync.when(
