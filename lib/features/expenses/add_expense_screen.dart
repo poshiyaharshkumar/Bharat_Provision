@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/database/database_helper.dart';
+import '../../data/providers.dart';
 import '../../data/repositories/expense_repository.dart';
 import '../../shared/models/expense_account_model.dart';
 import '../../shared/models/expense_model.dart';
@@ -68,26 +68,29 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
           return DropdownButtonFormField<ExpenseAccount>(
             decoration: const InputDecoration(
               labelText: 'Expense Account',
-            border: OutlineInputBorder(),
-          ),
-          value: _selectedAccount,
-          items: accounts.map((account) {
-            return DropdownMenuItem(
-              value: account,
-              child: Text(account.accountNameGujarati),
-            );
-          }).toList(),
-          onChanged: (value) {
-            setState(() {
-              _selectedAccount = value;
-              if (!_amountEdited && value != null) {
-                _amountController.text = value.typicalAmount.toString();
-              }
-            });
-          },
-          validator: (value) => value == null ? 'Please select an account' : null,
-        );
-      },
+              border: OutlineInputBorder(),
+            ),
+            value: _selectedAccount,
+            items: accounts.map((account) {
+              return DropdownMenuItem(
+                value: account,
+                child: Text(account.accountNameGujarati),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedAccount = value;
+                if (!_amountEdited && value != null) {
+                  _amountController.text = value.typicalAmount.toString();
+                }
+              });
+            },
+            validator: (value) {
+              return value == null ? 'Please select an account' : null;
+            },
+          );
+        },
+      ),
       error: (error, stack) => Text('Error: $error'),
       loading: () => const CircularProgressIndicator(),
     );

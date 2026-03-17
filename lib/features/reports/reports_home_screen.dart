@@ -116,6 +116,12 @@ class ReportsHomeScreen extends ConsumerWidget {
                 ),
               ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _SalesCard extends ConsumerWidget {
   const _SalesCard({

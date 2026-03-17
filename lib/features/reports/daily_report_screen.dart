@@ -4,8 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/auth/role_provider.dart';
 import '../../core/utils/currency_format.dart';
 import '../../data/repositories/report_repository.dart';
-import '../../core/database/database_helper.dart';
-import '../../shared/models/bill_model.dart';
+import '../dashboard/dashboard_providers.dart';
 
 class DailyReportScreen extends ConsumerStatefulWidget {
   const DailyReportScreen({super.key});
@@ -69,9 +68,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
   }
 
   Widget _buildSummary() {
-    final repo = ref.watch(reportRepositoryProvider);
+    final repoFuture = ref.watch(reportRepositoryProvider.future);
     return FutureBuilder<DailyReportData>(
-      future: repo.getDailyReport(_selectedDate),
+      future: repoFuture.then((repo) => repo.getDailyReport(_selectedDate)),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const CircularProgressIndicator();
         final data = snapshot.data!;
@@ -226,9 +225,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
   }
 
   Widget _buildBillsList() {
-    final repo = ref.watch(reportRepositoryProvider);
+    final repoFuture = ref.watch(reportRepositoryProvider.future);
     return FutureBuilder<DailyReportData>(
-      future: repo.getDailyReport(_selectedDate),
+      future: repoFuture.then((repo) => repo.getDailyReport(_selectedDate)),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const CircularProgressIndicator();
         final data = snapshot.data!;
@@ -246,7 +245,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                 ...data.bills.map(
                   (bill) => ListTile(
                     title: Text('Bill #${bill.id}'),
-                    subtitle: Text('Customer: ${bill.customerName ?? 'N/A'}'),
+                    subtitle: Text(
+                      'Customer: ${bill.customerNameSnapshot ?? 'N/A'}',
+                    ),
                     trailing: Text(formatCurrency(bill.totalAmount)),
                     onTap: () {
                       // TODO: Open bill detail

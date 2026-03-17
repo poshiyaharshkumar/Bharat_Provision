@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/database/database_helper.dart';
+import '../../data/providers.dart';
 import '../../data/repositories/expense_repository.dart';
 import '../../shared/models/expense_account_model.dart';
 import '../../shared/models/expense_model.dart';
@@ -73,20 +73,21 @@ class _ExpenseListScreenState extends ConsumerState<ExpenseListScreen> {
           final accounts = snapshot.data!;
           return DropdownButton<ExpenseAccount?>(
             value: _selectedAccount,
-          hint: const Text('All Accounts'),
-          isExpanded: true,
-          items: [
-            const DropdownMenuItem(value: null, child: Text('All Accounts')),
-            ...accounts.map((account) {
-              return DropdownMenuItem(
-                value: account,
-                child: Text(account.accountNameGujarati),
-              );
-            }),
-          ],
-          onChanged: (value) => setState(() => _selectedAccount = value),
-        );
-      },
+            hint: const Text('All Accounts'),
+            isExpanded: true,
+            items: [
+              const DropdownMenuItem(value: null, child: Text('All Accounts')),
+              ...accounts.map((account) {
+                return DropdownMenuItem(
+                  value: account,
+                  child: Text(account.accountNameGujarati),
+                );
+              }),
+            ],
+            onChanged: (value) => setState(() => _selectedAccount = value),
+          );
+        },
+      ),
       error: (error, stack) => Text('Error: $error'),
       loading: () => const CircularProgressIndicator(),
     );
@@ -125,38 +126,49 @@ class _ExpenseListScreenState extends ConsumerState<ExpenseListScreen> {
           // Group by date
           final grouped = <String, List<Expense>>{};
           for (final expense in expenses) {
-          final date = expense.date.split('T').first;
-          grouped.putIfAbsent(date, () => []).add(expense);
-        }
+            final date = expense.expenseDate.split('T').first;
+            grouped.putIfAbsent(date, () => []).add(expense);
+          }
 
-        final total = expenses.fold(0.0, (sum, e) => sum + e.amount);
+          final total = expenses.fold(0.0, (sum, e) => sum + e.amount);
 
-        return Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'Total: ${formatCurrency(total)}',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Total: ${formatCurrency(total)}',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: grouped.length,
-                itemBuilder: (context, index) {
-                  final date = grouped.keys.elementAt(index);
-                  final dayExpenses = grouped[date]!;
-                  final dayTotal = dayExpenses.fold(0.0, (sum, e) => sum + e.amount);
-                  return ExpansionTile(
-                    title: Text('$date - ${formatCurrency(dayTotal)}'),
-                    children: dayExpenses.map((expense) => _buildExpenseTile(expense)).toList(),
-                  );
-                },
+              Expanded(
+                child: ListView.builder(
+                  itemCount: grouped.length,
+                  itemBuilder: (context, index) {
+                    final date = grouped.keys.elementAt(index);
+                    final dayExpenses = grouped[date]!;
+                    final dayTotal = dayExpenses.fold(
+                      0.0,
+                      (sum, e) => sum + e.amount,
+                    );
+                    return ExpansionTile(
+                      title: Text('$date - ${formatCurrency(dayTotal)}'),
+                      children: dayExpenses
+                          .map((expense) => _buildExpenseTile(expense))
+                          .toList(),
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
-        );
-      },
+            ],
+          );
+        },
+      ),
+      error: (error, stack) => Center(child: Text('Error: $error')),
+      loading: () => const Center(child: CircularProgressIndicator()),
     );
   }
 
@@ -184,12 +196,11 @@ class _ExpenseListScreenState extends ConsumerState<ExpenseListScreen> {
           ),
         );
       },
-      error: (error, stack) => Text('Error: $error'),
-      loading: () => const CircularProgressIndicator(),
     );
   }
 
-  Future<ExpenseAccount?> _getAccountName(int accountId) async {
+  Future<ExpenseAccount?> _getAccountName(int? accountId) async {
+    if (accountId == null) return null;
     final repo = await ref.read(expenseRepositoryProvider.future);
     final accounts = await repo.getExpenseAccounts();
     return accounts.where((a) => a.id == accountId).firstOrNull;
