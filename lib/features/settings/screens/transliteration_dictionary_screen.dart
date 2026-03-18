@@ -28,7 +28,7 @@ class TransliterationEntry {
 }
 
 class TransliterationDictionaryScreen extends ConsumerStatefulWidget {
-  const TransliterationDictionaryScreen({Key? key}) : super(key: key);
+  const TransliterationDictionaryScreen({super.key});
 
   @override
   ConsumerState<TransliterationDictionaryScreen> createState() =>
@@ -37,7 +37,7 @@ class TransliterationDictionaryScreen extends ConsumerStatefulWidget {
 
 class _TransliterationDictionaryScreenState
     extends ConsumerState<TransliterationDictionaryScreen> {
-  List<TransliterationEntry> _entries = [
+  final List<TransliterationEntry> _entries = [
     // Built-in entries (examples)
     TransliterationEntry(
       phoneticKey: 'bhaji',

@@ -1,14 +1,15 @@
+// ignore_for_file: dead_code, dead_null_aware_expression
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../settings_providers.dart';
-import 'pin_verification_screen.dart';
 import 'superadmin_panel_screen.dart';
 import 'expense_accounts_manager_screen.dart';
 import 'transliteration_dictionary_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
-  const SettingsScreen({Key? key}) : super(key: key);
+  const SettingsScreen({super.key});
 
   @override
   ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
@@ -107,28 +108,28 @@ class _ShopInfoTab extends ConsumerWidget {
               fields: [
                 _TextSettingField(
                   label: 'Shop Name',
-                  value: data['shop_name'] ?? '',
+                  value: data['shop_name']!,
                   onSave: (value) {
                     // TODO: Save to repository
                   },
                 ),
                 _TextSettingField(
                   label: 'Address',
-                  value: data['shop_address'] ?? '',
+                  value: data['shop_address']!,
                   onSave: (value) {
                     // TODO: Save to repository
                   },
                 ),
                 _TextSettingField(
                   label: 'Phone',
-                  value: data['shop_phone'] ?? '',
+                  value: data['shop_phone']!,
                   onSave: (value) {
                     // TODO: Save to repository
                   },
                 ),
                 _TextSettingField(
                   label: 'GST Number',
-                  value: data['gstin'] ?? '',
+                  value: data['gstin']!,
                   onSave: (value) {
                     // TODO: Save to repository
                   },
@@ -159,28 +160,28 @@ class _BillSettingsTab extends ConsumerWidget {
               fields: [
                 _BoolSettingField(
                   label: 'ગ્રાહકનું નામ બિલ પર',
-                  value: data['module_customer_name_on_bill'] ?? true,
+                  value: data['module_customer_name_on_bill']!,
                   onChanged: (value) {
                     // TODO: Save to repository
                   },
                 ),
                 _BoolSettingField(
                   label: 'ચૂકવણી પ્રકાર બિલ પર',
-                  value: data['module_payment_mode_on_bill'] ?? true,
+                  value: data['module_payment_mode_on_bill']!,
                   onChanged: (value) {
                     // TODO: Save to repository
                   },
                 ),
                 _BoolSettingField(
                   label: 'વજન બિલ પર',
-                  value: data['show_weight_on_bill'] ?? true,
+                  value: data['show_weight_on_bill']!,
                   onChanged: (value) {
                     // TODO: Save to repository
                   },
                 ),
                 _BoolSettingField(
                   label: 'GST ગણતરી',
-                  value: data['gst_enabled'] ?? false,
+                  value: data['gst_enabled']!,
                   onChanged: (value) {
                     // TODO: Save to repository
                   },
@@ -211,21 +212,21 @@ class _PrintSettingsTab extends ConsumerWidget {
               fields: [
                 _BoolSettingField(
                   label: 'ઉધારે બિલ છાપો',
-                  value: data['print_udhaar_receipt'] ?? true,
+                  value: data['print_udhaar_receipt']!,
                   onChanged: (value) {
                     // TODO: Save to repository
                   },
                 ),
                 _BoolSettingField(
                   label: 'ચૂકવણી રસીદ છાપો',
-                  value: data['print_payment_receipt'] ?? true,
+                  value: data['print_payment_receipt']!,
                   onChanged: (value) {
                     // TODO: Save to repository
                   },
                 ),
                 _BoolSettingField(
                   label: 'અંતિમ ચૂકવણી રસીદ',
-                  value: data['print_final_receipt'] ?? true,
+                  value: data['print_final_receipt']!,
                   onChanged: (value) {
                     // TODO: Save to repository
                   },
@@ -273,21 +274,21 @@ class _ReminderSettingsTab extends ConsumerWidget {
               fields: [
                 _BoolSettingField(
                   label: 'WhatsApp રીમાઇન્ડર',
-                  value: data['reminder_whatsapp'] ?? false,
+                  value: data['reminder_whatsapp']!,
                   onChanged: (value) {
                     // TODO: Save to repository
                   },
                 ),
                 _BoolSettingField(
                   label: 'SMS રીમાઇન્ડર',
-                  value: data['reminder_sms'] ?? false,
+                  value: data['reminder_sms']!,
                   onChanged: (value) {
                     // TODO: Save to repository
                   },
                 ),
                 _BoolSettingField(
                   label: 'PDF સ્ટેટમેન્ટ',
-                  value: data['reminder_pdf'] ?? false,
+                  value: data['reminder_pdf']!,
                   onChanged: (value) {
                     // TODO: Save to repository
                   },
@@ -656,7 +657,7 @@ class _ActionSettingField extends StatelessWidget {
 class ChangePinScreen extends StatelessWidget {
   final String forRole;
 
-  const ChangePinScreen({required this.forRole, Key? key}) : super(key: key);
+  const ChangePinScreen({required this.forRole, super.key});
 
   @override
   Widget build(BuildContext context) {

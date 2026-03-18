@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/auth_models.dart';
 import '../providers/auth_provider.dart';
 import '../settings_providers.dart';
-import '../utils/pin_utils.dart';
 import '../widgets/pin_numpad.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   final Function(String role) onLoginSuccess;
 
-  const LoginScreen({required this.onLoginSuccess, Key? key}) : super(key: key);
+  const LoginScreen({required this.onLoginSuccess, super.key});
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();

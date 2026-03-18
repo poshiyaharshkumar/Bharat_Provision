@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
-import '../services/pin_storage_service.dart';
 import '../widgets/pin_numpad.dart';
 
 /// PIN verification screen - used for sensitive operations
@@ -14,8 +13,8 @@ class PinVerificationScreen extends ConsumerStatefulWidget {
     required this.title,
     required this.onVerified,
     this.targetRole,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   ConsumerState<PinVerificationScreen> createState() =>
@@ -72,9 +71,8 @@ class _PinVerificationScreenState extends ConsumerState<PinVerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final session = ref.watch(authSessionProvider);
-    final isSuperadmin = session?.role == 'superadmin';
-    final maxLength = isSuperadmin ? 6 : 6;
+    final isSuperadmin = ref.watch(authSessionProvider)?.role == 'superadmin';
+    final maxLength = isSuperadmin ? 6 : 4;
 
     return Scaffold(
       appBar: AppBar(title: Text(widget.title), centerTitle: true),
@@ -125,7 +123,7 @@ class _PinVerificationScreenState extends ConsumerState<PinVerificationScreen> {
 class ChangePinScreen extends ConsumerStatefulWidget {
   final String forRole; // 'own', 'employee', 'admin'
 
-  const ChangePinScreen({required this.forRole, Key? key}) : super(key: key);
+  const ChangePinScreen({required this.forRole, super.key});
 
   @override
   ConsumerState<ChangePinScreen> createState() => _ChangePinScreenState();
@@ -236,8 +234,6 @@ class _ChangePinScreenState extends ConsumerState<ChangePinScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final session = ref.watch(authSessionProvider);
-
     return Scaffold(
       appBar: AppBar(
         title: Text(

@@ -2,9 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
-import '../localization/app_strings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../auth/role_provider.dart';
 import '../navigation/nav_provider.dart';
 
 /// Platform-aware navigation shell: bottom nav on Android, side rail on Windows

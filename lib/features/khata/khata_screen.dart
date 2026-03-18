@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/utils/currency_format.dart';
-import '../../data/repositories/report_repository.dart';
 import '../../data/providers.dart';
 
 class KhataScreen extends ConsumerStatefulWidget {

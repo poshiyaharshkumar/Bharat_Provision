@@ -14,14 +14,15 @@ class PinNumpad extends StatefulWidget {
     this.maxLength = 6,
     this.showDots = true,
     this.isShaking = false,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   State<PinNumpad> createState() => _PinNumpadState();
 }
 
-class _PinNumpadState extends State<PinNumpad> with SingleTickerProviderStateMixin {
+class _PinNumpadState extends State<PinNumpad>
+    with SingleTickerProviderStateMixin {
   late AnimationController _shakeController;
   String _pin = '';
 
@@ -77,10 +78,7 @@ class _PinNumpadState extends State<PinNumpad> with SingleTickerProviderStateMix
       animation: _shakeController,
       builder: (context, child) {
         final offset = Offset(_shakeOffset(_shakeController.value), 0);
-        return Transform.translate(
-          offset: offset,
-          child: child,
-        );
+        return Transform.translate(offset: offset, child: child);
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -99,11 +97,10 @@ class _PinNumpadState extends State<PinNumpad> with SingleTickerProviderStateMix
                       margin: const EdgeInsets.symmetric(horizontal: 8),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.grey[400]!,
-                          width: 2,
-                        ),
-                        color: index < _pin.length ? Colors.black : Colors.transparent,
+                        border: Border.all(color: Colors.grey[400]!, width: 2),
+                        color: index < _pin.length
+                            ? Colors.black
+                            : Colors.transparent,
                       ),
                     );
                   }),
@@ -166,10 +163,7 @@ class _PinNumpadState extends State<PinNumpad> with SingleTickerProviderStateMix
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: digits
-          .map((digit) => _buildNumpadButton(
-                digit,
-                () => _addDigit(digit),
-              ))
+          .map((digit) => _buildNumpadButton(digit, () => _addDigit(digit)))
           .toList(),
     );
   }

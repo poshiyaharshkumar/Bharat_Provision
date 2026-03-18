@@ -5,7 +5,7 @@ import '../../stock/stock_providers.dart';
 import '../../../shared/models/expense_account_model.dart';
 
 class ExpenseAccountsManagerScreen extends ConsumerStatefulWidget {
-  const ExpenseAccountsManagerScreen({Key? key}) : super(key: key);
+  const ExpenseAccountsManagerScreen({super.key});
 
   @override
   ConsumerState<ExpenseAccountsManagerScreen> createState() =>
@@ -77,7 +77,7 @@ class _ExpenseAccountsManagerScreenState
                       );
                     },
                   );
-                }).toList(),
+                }),
               const SizedBox(height: 24),
               // Reset to defaults button
               SizedBox(
@@ -191,7 +191,7 @@ class _ExpenseAccountTile extends StatelessWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Switch(value: account.isActive ?? true, onChanged: onToggle),
+            Switch(value: account.isActive, onChanged: onToggle),
             const SizedBox(width: 8),
             IconButton(icon: const Icon(Icons.edit), onPressed: onEdit),
           ],
@@ -276,7 +276,7 @@ class _AddEditAccountDialogState extends State<_AddEditAccountDialog> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: _selectedType,
+              initialValue: _selectedType,
               decoration: const InputDecoration(
                 labelText: 'Type',
                 border: OutlineInputBorder(),

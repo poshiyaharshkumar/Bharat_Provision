@@ -9,7 +9,7 @@ import '../screens/login_screen.dart';
 class AuthGate extends ConsumerStatefulWidget {
   final Widget child;
 
-  const AuthGate({required this.child, Key? key}) : super(key: key);
+  const AuthGate({required this.child, super.key});
 
   @override
   ConsumerState<AuthGate> createState() => _AuthGateState();
@@ -17,8 +17,6 @@ class AuthGate extends ConsumerStatefulWidget {
 
 class _AuthGateState extends ConsumerState<AuthGate>
     with WidgetsBindingObserver {
-  AppLifecycleState? _appLifecycleState;
-
   @override
   void initState() {
     super.initState();
@@ -38,7 +36,7 @@ class _AuthGateState extends ConsumerState<AuthGate>
 
     // Load security settings
     final settings = await ref.read(securitySettingsProvider.future);
-    final requirePinOnOpen = settings['require_pin_on_open'] as bool ?? false;
+    final requirePinOnOpen = settings['require_pin_on_open'] as bool? ?? false;
 
     if (mounted) {
       // If app requires PIN on open, clear session to show login
@@ -50,8 +48,6 @@ class _AuthGateState extends ConsumerState<AuthGate>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    _appLifecycleState = state;
-
     if (state == AppLifecycleState.paused) {
       // App went to background
       _checkAndLockSession();
@@ -74,9 +70,9 @@ class _AuthGateState extends ConsumerState<AuthGate>
   }
 
   void _handleLoginSuccess(String role) {
-    // Auth is already set by login screen
-    // Just update the Riverpod state if needed
-    Navigator.of(context).pop();
+    // Auth is already set by login screen; rebuild to show app content.
+    // No navigation/pop is needed because AuthGate is the root widget.
+    if (mounted) setState(() {});
   }
 
   @override

@@ -5,7 +5,7 @@ import '../settings_providers.dart';
 import 'pin_verification_screen.dart';
 
 class SuperadminPanelScreen extends ConsumerStatefulWidget {
-  const SuperadminPanelScreen({Key? key}) : super(key: key);
+  const SuperadminPanelScreen({super.key});
 
   @override
   ConsumerState<SuperadminPanelScreen> createState() =>
