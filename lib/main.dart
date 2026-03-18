@@ -15,7 +15,7 @@ import 'features/billing/billing_home_screen.dart';
 import 'features/inventory/item_list_screen.dart';
 import 'features/khata/customer_list_screen.dart';
 import 'features/reports/reports_home_screen.dart';
-import 'features/settings/screens/settings_screen.dart';
+import 'features/settings/settings_screen.dart';
 import 'routing/app_router.dart';
 import 'core/auth/role_provider.dart';
 import 'features/udhaar/udhaar_dashboard_screen.dart';
