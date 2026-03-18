@@ -126,8 +126,9 @@ class _KhataScreenState extends ConsumerState<KhataScreen>
     return FutureBuilder<List<KhataEntry>>(
       future: _getCreditEntries(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData)
+        if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
+        }
         final entries = _filterEntries(snapshot.data!);
         return ListView.builder(
           itemCount: entries.length,
@@ -143,8 +144,9 @@ class _KhataScreenState extends ConsumerState<KhataScreen>
     return FutureBuilder<List<KhataEntry>>(
       future: _getDebitEntries(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData)
+        if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
+        }
         final entries = _filterEntries(snapshot.data!);
         return ListView.builder(
           itemCount: entries.length,
@@ -159,8 +161,9 @@ class _KhataScreenState extends ConsumerState<KhataScreen>
     return FutureBuilder<List<KhataEntry>>(
       future: _getAllEntries(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData)
+        if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
+        }
         final entries = _filterEntries(snapshot.data!);
         return ListView.builder(
           itemCount: entries.length,

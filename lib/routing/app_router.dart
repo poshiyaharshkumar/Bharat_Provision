@@ -25,7 +25,6 @@ import '../features/udhaar/final_total_screen.dart';
 import '../features/dashboard/dashboard_screen.dart';
 import '../features/reports/pl_report_screen.dart';
 import '../features/reports/daily_report_screen.dart';
-import '../features/khata/khata_screen.dart';
 import '../features/expenses/add_expense_screen.dart';
 import '../features/expenses/expense_list_screen.dart';
 

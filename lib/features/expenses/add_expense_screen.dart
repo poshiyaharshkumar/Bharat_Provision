@@ -70,7 +70,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
               labelText: 'Expense Account',
               border: OutlineInputBorder(),
             ),
-            value: _selectedAccount,
+            initialValue: _selectedAccount,
             items: accounts.map((account) {
               return DropdownMenuItem(
                 value: account,

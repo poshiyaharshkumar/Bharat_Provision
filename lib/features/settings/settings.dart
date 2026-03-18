@@ -7,7 +7,7 @@ export 'settings_providers.dart';
 // Screens
 export 'screens/login_screen.dart';
 export 'screens/settings_screen.dart';
-export 'screens/pin_verification_screen.dart';
+export 'screens/pin_verification_screen.dart' hide ChangePinScreen;
 export 'screens/superadmin_panel_screen.dart';
 export 'screens/expense_accounts_manager_screen.dart';
 export 'screens/transliteration_dictionary_screen.dart';

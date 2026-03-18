@@ -107,8 +107,9 @@ class _ReplaceScreenState extends ConsumerState<ReplaceScreen> {
   }
 
   double get _replacementQtyCalculated {
-    if (_selectedReturnItem == null || _selectedReplacementProduct == null)
+    if (_selectedReturnItem == null || _selectedReplacementProduct == null) {
       return 0;
+    }
     if (_selectedReplacementProduct!.sellPrice <= 0) return 0;
     final returnValue = _returnValue;
     return (returnValue / _selectedReplacementProduct!.sellPrice) * 1000;
@@ -458,8 +459,9 @@ class _ReplaceScreenState extends ConsumerState<ReplaceScreen> {
                     ),
                   ],
                   onChanged: (v) {
-                    if (v != null)
+                    if (v != null) {
                       ref.read(returnModeProvider.notifier).state = v;
+                    }
                   },
                 ),
               ],
