@@ -8,12 +8,14 @@ import 'core/localization/app_strings.dart';
 import 'core/theme/app_theme.dart';
 import 'data/providers.dart';
 import 'features/settings/settings_providers.dart';
+import 'features/settings/providers/auth_provider.dart';
+import 'features/settings/widgets/auth_gate.dart';
 import 'core/widgets/app_scaffold.dart';
 import 'features/billing/billing_home_screen.dart';
 import 'features/inventory/item_list_screen.dart';
 import 'features/khata/customer_list_screen.dart';
 import 'features/reports/reports_home_screen.dart';
-import 'features/settings/settings_screen.dart';
+import 'features/settings/screens/settings_screen.dart';
 import 'routing/app_router.dart';
 import 'core/auth/role_provider.dart';
 import 'features/udhaar/udhaar_dashboard_screen.dart';
@@ -23,11 +25,7 @@ void main() {
   if (Platform.isWindows || Platform.isLinux) {
     sqfliteFfiInit();
   }
-  runApp(
-    const ProviderScope(
-      child: KiranaApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: KiranaApp()));
 }
 
 class KiranaApp extends ConsumerStatefulWidget {
@@ -63,12 +61,14 @@ class _KiranaAppState extends ConsumerState<KiranaApp> {
       builder: (context, child) {
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(
-            textScaler: largeText ? const TextScaler.linear(1.2) : TextScaler.noScaling,
+            textScaler: largeText
+                ? const TextScaler.linear(1.2)
+                : TextScaler.noScaling,
           ),
           child: child ?? const SizedBox.shrink(),
         );
       },
-      home: const _MainShell(),
+      home: AuthGate(child: const _MainShell()),
       onGenerateRoute: AppRouter.onGenerateRoute,
     );
   }
@@ -80,7 +80,9 @@ class _MainShell extends ConsumerStatefulWidget {
   @override
   ConsumerState<_MainShell> createState() => _MainShellState();
 }
-class _MainShellState extends ConsumerState<_MainShell> {
+
+class _MainShellState extends ConsumerState<_MainShell>
+    with WidgetsBindingObserver {
   int _currentIndex = 0;
 
   static const List<Widget> _baseScreens = [
@@ -90,6 +92,39 @@ class _MainShellState extends ConsumerState<_MainShell> {
     ReportsHomeScreen(),
     SettingsScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      // App went to background - session timeout will trigger on resume
+    } else if (state == AppLifecycleState.resumed) {
+      // App came back to foreground
+      final session = ref.read(authSessionProvider);
+      if (session != null && session.isExpired) {
+        // Session expired - logout
+        ref.read(authSessionProvider.notifier).logout();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Session expired. Please login again.'),
+            ),
+          );
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
