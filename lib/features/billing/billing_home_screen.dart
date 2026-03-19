@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_strings.dart' as strings;
 import '../../core/errors/error_handler.dart';
+import '../../core/errors/error_types.dart';
 import '../../shared/widgets/errors/error_dialogue.dart';
 import '../../core/utils/currency_format.dart';
 import '../../core/utils/weight_calculator.dart';

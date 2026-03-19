@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../core/errors/error_logger.dart';
-import '../../core/errors/error_types.dart';
+import '../../../core/errors/error_logger.dart';
+import '../../../core/errors/error_types.dart';
 
 class ErrorDialog {
   static Future<void> show(
@@ -82,7 +82,7 @@ class ErrorDialog {
                 Text('WhatsApp: ${contact ?? 'આગામી સંખ્યા'}'),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
-                  icon: const Icon(Icons.whatsapp),
+                  icon: const Icon(Icons.chat),
                   label: const Text('WhatsApp મોકલો'),
                   onPressed: contact == null || contact.isEmpty
                       ? null
