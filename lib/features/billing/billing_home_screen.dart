@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart'; // TODO: Add to pubspec.yaml
 
 import '../../core/constants/app_strings.dart' as strings;
+import '../../core/errors/error_handler.dart';
+import '../../shared/widgets/errors/error_dialogue.dart';
 import '../../core/utils/currency_format.dart';
 import '../../core/utils/weight_calculator.dart';
 import '../../data/models/item.dart';
@@ -509,8 +511,25 @@ class _BillingHomeScreenState extends ConsumerState<BillingHomeScreen> {
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) =>
-                Center(child: Text('${strings.AppStrings.errorGeneric} $e')),
+            error: (e, st) {
+              final appError = e is AppError
+                  ? e
+                  : ErrorHandler.handle(e, st, context: 'BillingHomeScreen');
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                ErrorDialogue.showSnackbar(
+                  context,
+                  message: appError.userMessage,
+                  code: appError.code,
+                  type: ErrorDialogueType.error,
+                );
+              });
+              return Center(
+                child: Text(
+                  appError.userMessage,
+                  style: const TextStyle(fontSize: 14),
+                ),
+              );
+            },
           ),
         ),
       ],

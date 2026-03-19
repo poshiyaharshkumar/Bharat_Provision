@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/errors/error_handler.dart';
 import '../../data/models/item.dart';
 import '../../data/providers.dart';
 
@@ -8,14 +9,22 @@ final billingSearchProvider = StateProvider<String>((ref) => '');
 
 // Items provider for billing - fetches from the same items table as inventory
 final billingItemsProvider = FutureProvider<List<Item>>((ref) async {
-  final repo = await ref.watch(itemRepositoryFutureProvider.future);
-  final query = ref.watch(billingSearchProvider);
+  try {
+    final repo = await ref.watch(itemRepositoryFutureProvider.future);
+    final query = ref.watch(billingSearchProvider);
 
-  if (query.isEmpty) {
-    return repo.getAll();
+    if (query.isEmpty) {
+      return repo.getAll();
+    }
+
+    return repo.search(query, lowStockOnly: false);
+  } catch (e, st) {
+    throw ErrorHandler.handle(
+      e,
+      st,
+      context: 'BillingProviders.billingItemsProvider',
+    );
   }
-
-  return repo.search(query, lowStockOnly: false);
 });
 
 /// Single line in a bill draft.

@@ -4,12 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:string_similarity/string_similarity.dart';
 
 import '../../core/database/database_helper.dart';
+import '../../core/errors/error_handler.dart';
 import '../models/product_model.dart';
 
 final productProvider =
     StateNotifierProvider<ProductProvider, AsyncValue<List<Product>>>(
-  (ref) => ProductProvider(DatabaseHelper.instance)..loadAllProducts(),
-);
+      (ref) => ProductProvider(DatabaseHelper.instance)..loadAllProducts(),
+    );
 
 class ProductProvider extends StateNotifier<AsyncValue<List<Product>>> {
   final DatabaseHelper _dbHelper;
@@ -19,17 +20,24 @@ class ProductProvider extends StateNotifier<AsyncValue<List<Product>>> {
   Future<void> loadAllProducts() async {
     try {
       final db = await _dbHelper.database;
-      final rows = await db.query(
-        'products',
-        where: 'is_active = 1',
-        orderBy: 'name_gujarati COLLATE NOCASE',
-      ) as List<Map<String, Object?>>;
+      final rows =
+          await db.query(
+                'products',
+                where: 'is_active = 1',
+                orderBy: 'name_gujarati COLLATE NOCASE',
+              )
+              as List<Map<String, Object?>>;
       final products = rows
           .map<Product>((m) => Product.fromMap(m as Map<String, dynamic>))
           .toList();
       state = AsyncValue.data(products);
     } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      final appError = ErrorHandler.handle(
+        e,
+        st,
+        context: 'ProductProvider.loadAllProducts',
+      );
+      state = AsyncValue.error(appError, st);
     }
   }
 
@@ -43,7 +51,9 @@ class ProductProvider extends StateNotifier<AsyncValue<List<Product>>> {
           'created_at': product.createdAt ?? now,
           'updated_at': product.updatedAt ?? now,
           // P02: ensure transliteration_keys stored as JSON array string if possible
-          'transliteration_keys': _normalizeTranslit(product.transliterationKeys),
+          'transliteration_keys': _normalizeTranslit(
+            product.transliterationKeys,
+          ),
         };
 
         final id = await txn.insert('products', productMap);
@@ -66,7 +76,12 @@ class ProductProvider extends StateNotifier<AsyncValue<List<Product>>> {
       });
       await loadAllProducts();
     } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      final appError = ErrorHandler.handle(
+        e,
+        st,
+        context: 'ProductProvider.addProduct',
+      );
+      state = AsyncValue.error(appError, st);
     }
   }
 
@@ -81,7 +96,9 @@ class ProductProvider extends StateNotifier<AsyncValue<List<Product>>> {
           {
             ...product.toMap(),
             'updated_at': now,
-            'transliteration_keys': _normalizeTranslit(product.transliterationKeys),
+            'transliteration_keys': _normalizeTranslit(
+              product.transliterationKeys,
+            ),
           },
           where: 'id = ?',
           whereArgs: [product.id],
@@ -89,7 +106,12 @@ class ProductProvider extends StateNotifier<AsyncValue<List<Product>>> {
       });
       await loadAllProducts();
     } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      final appError = ErrorHandler.handle(
+        e,
+        st,
+        context: 'ProductProvider.updateProduct',
+      );
+      state = AsyncValue.error(appError, st);
     }
   }
 
@@ -98,15 +120,16 @@ class ProductProvider extends StateNotifier<AsyncValue<List<Product>>> {
     try {
       state = const AsyncValue.loading();
       await _dbHelper.runInTransaction((txn) async {
-        await txn.delete(
-          'products',
-          where: 'id = ?',
-          whereArgs: [product.id],
-        );
+        await txn.delete('products', where: 'id = ?', whereArgs: [product.id]);
       });
       await loadAllProducts();
     } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      final appError = ErrorHandler.handle(
+        e,
+        st,
+        context: 'ProductProvider.deleteProduct',
+      );
+      state = AsyncValue.error(appError, st);
     }
   }
 
@@ -121,7 +144,9 @@ class ProductProvider extends StateNotifier<AsyncValue<List<Product>>> {
       final db = await _dbHelper.database;
       final like = '%$q%';
 
-      final rows = await db.rawQuery('''
+      final rows =
+          await db.rawQuery(
+                '''
         SELECT DISTINCT p.*
         FROM products p
         LEFT JOIN transliteration_dictionary t
@@ -134,7 +159,10 @@ class ProductProvider extends StateNotifier<AsyncValue<List<Product>>> {
             p.transliteration_keys LIKE ? OR
             t.phonetic_key LIKE ?
           )
-      ''', [like, like, like, like, like]) as List<Map<String, Object?>>;
+      ''',
+                [like, like, like, like, like],
+              )
+              as List<Map<String, Object?>>;
 
       final products = rows
           .map<Product>((m) => Product.fromMap(m as Map<String, dynamic>))
@@ -162,22 +190,34 @@ class ProductProvider extends StateNotifier<AsyncValue<List<Product>>> {
 
       state = AsyncValue.data(products);
     } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      final appError = ErrorHandler.handle(
+        e,
+        st,
+        context: 'ProductProvider.searchProducts',
+      );
+      state = AsyncValue.error(appError, st);
     }
   }
 
   Future<List<Product>> getLowStockProducts() async {
     try {
       final db = await _dbHelper.database;
-      final rows = await db.rawQuery('''
+      final rows =
+          await db.rawQuery('''
         SELECT * FROM products
         WHERE is_active = 1
           AND stock_qty <= min_stock_qty
-      ''') as List<Map<String, Object?>>;
+      ''')
+              as List<Map<String, Object?>>;
       return rows
           .map<Product>((m) => Product.fromMap(m as Map<String, dynamic>))
           .toList();
-    } catch (_) {
+    } catch (e, st) {
+      ErrorHandler.handleSilently(
+        e,
+        st,
+        context: 'ProductProvider.getLowStockProducts',
+      );
       return [];
     }
   }
@@ -215,4 +255,3 @@ class ProductProvider extends StateNotifier<AsyncValue<List<Product>>> {
     return raw;
   }
 }
-

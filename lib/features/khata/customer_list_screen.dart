@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/errors/error_handler.dart';
+import '../../shared/widgets/errors/error_dialogue.dart';
 import '../../core/localization/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/currency_format.dart';
@@ -53,7 +55,8 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: '${AppStrings.customerName} અથવા ${AppStrings.phone} શોધો',
+                hintText:
+                    '${AppStrings.customerName} અથવા ${AppStrings.phone} શોધો',
                 prefixIcon: const Icon(Icons.search),
               ),
             ),
@@ -63,14 +66,14 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
               data: (customers) => _CustomerListWithBalances(
                 customers: customers,
                 balanceColor: _balanceColor,
-                onCustomerTap: (c) => Navigator.of(context).pushNamed(
-                  AppRouter.customerKhata,
-                  arguments: c.id,
-                ),
+                onCustomerTap: (c) => Navigator.of(
+                  context,
+                ).pushNamed(AppRouter.customerKhata, arguments: c.id),
                 onDelete: (_, c) => _confirmDelete(c),
               ),
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('${AppStrings.errorGeneric} $e')),
+              error: (e, _) =>
+                  Center(child: Text('${AppStrings.errorGeneric} $e')),
             ),
           ),
         ],
@@ -101,7 +104,9 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
       message = '${AppStrings.errorGeneric} $e';
     }
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
@@ -129,9 +134,9 @@ class _CustomerListWithBalances extends ConsumerWidget {
       itemBuilder: (ctx, i) {
         final c = customers[i];
         return FutureBuilder(
-          future: ref.read(khataRepositoryFutureProvider.future).then(
-                (repo) => repo.getBalance(c.id!),
-              ),
+          future: ref
+              .read(khataRepositoryFutureProvider.future)
+              .then((repo) => repo.getBalance(c.id!)),
           builder: (ctx, snap) {
             final balance = snap.data ?? 0.0;
             return Card(
@@ -157,10 +162,9 @@ class _CustomerListWithBalances extends ConsumerWidget {
                         if (v == 'khata') {
                           onCustomerTap(c);
                         } else if (v == 'edit') {
-                          Navigator.of(context).pushNamed(
-                            AppRouter.customerEdit,
-                            arguments: c.id,
-                          );
+                          Navigator.of(
+                            context,
+                          ).pushNamed(AppRouter.customerEdit, arguments: c.id);
                         } else if (v == 'delete') {
                           onDelete(context, c);
                         }

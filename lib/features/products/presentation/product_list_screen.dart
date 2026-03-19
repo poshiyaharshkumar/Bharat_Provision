@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_strings.dart';
 import '../../../core/constants/app_strings.dart' as strings;
+import '../../../core/errors/error_handler.dart';
 import '../../../shared/models/product_model.dart';
 import '../../../shared/providers/product_provider.dart';
+import '../../../shared/widgets/errors/error_dialogue.dart';
 
 class ProductListScreen extends ConsumerStatefulWidget {
   const ProductListScreen({super.key});
@@ -47,9 +49,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
     final state = ref.watch(productProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(AppStrings.productsTitle),
-      ),
+      appBar: AppBar(title: const Text(AppStrings.productsTitle)),
       backgroundColor: const Color(0xFFF1F4F1),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,8 +99,10 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                   );
                 }
                 return ListView.builder(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   itemCount: products.length,
                   itemBuilder: (context, index) {
                     final p = products[index];
@@ -146,15 +148,28 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                   },
                 );
               },
-              loading: () => const Center(
-                child: CircularProgressIndicator(),
-              ),
-              error: (e, _) => Center(
-                child: Text(
-                  AppStrings.errorGeneric,
-                  style: const TextStyle(fontSize: 14),
-                ),
-              ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, st) {
+                final appErr = e is AppError
+                    ? e
+                    : ErrorHandler.handle(e, st, context: 'ProductListScreen');
+
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  ErrorDialogue.showSnackbar(
+                    context,
+                    message: appErr.userMessage,
+                    code: appErr.code,
+                    type: ErrorDialogueType.error,
+                  );
+                });
+
+                return Center(
+                  child: Text(
+                    appErr.userMessage,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                );
+              },
             ),
           ),
           const SizedBox(height: 56),
@@ -190,10 +205,9 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                 title: const Text(AppStrings.productActionEdit),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.of(context).pushNamed(
-                    '/products/edit',
-                    arguments: product.id,
-                  );
+                  Navigator.of(
+                    context,
+                  ).pushNamed('/products/edit', arguments: product.id);
                 },
               ),
               ListTile(
@@ -244,4 +258,3 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
     );
   }
 }
-

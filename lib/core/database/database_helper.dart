@@ -7,6 +7,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart' as sqflite_ffi;
 import 'package:sqflite_sqlcipher/sqflite.dart' as sqlcipher;
 
 import '../auth/pin_hasher.dart';
+import '../errors/error_handler.dart';
 
 class DatabaseHelper {
   DatabaseHelper._internal();
@@ -21,64 +22,91 @@ class DatabaseHelper {
 
   Future<dynamic> get database async {
     if (_db != null) return _db!;
-    _db = await _openEncrypted();
-    return _db!;
+    try {
+      _db = await _openEncrypted();
+      return _db!;
+    } catch (e, st) {
+      throw ErrorHandler.handle(e, st, context: 'DatabaseHelper.database');
+    }
   }
 
   /// P02: password must be SHA-256(adminPin).
   /// Call this once you have admin PIN from first launch wizard / login.
   Future<void> initDatabase({required String adminPin}) async {
     _password = PinHasher.sha256(adminPin);
-    _db = await _openEncrypted();
+    try {
+      _db = await _openEncrypted();
+    } catch (e, st) {
+      throw ErrorHandler.handle(e, st, context: 'DatabaseHelper.initDatabase');
+    }
   }
 
   Future<dynamic> _openEncrypted() async {
-    // On Android/iOS, use sqlcipher plugin with password.
-    if (Platform.isAndroid || Platform.isIOS) {
-      final dbPath = await sqlcipher.getDatabasesPath();
-      final path = p.join(dbPath, dbFileName);
+    try {
+      // On Android/iOS, use sqlcipher plugin with password.
+      if (Platform.isAndroid || Platform.isIOS) {
+        final dbPath = await sqlcipher.getDatabasesPath();
+        final path = p.join(dbPath, dbFileName);
 
-      final password = _password ?? PinHasher.sha256('0000');
+        final password = _password ?? PinHasher.sha256('0000');
 
-      return sqlcipher.openDatabase(
+        return sqlcipher.openDatabase(
+          path,
+          version: schemaVersion,
+          password: password,
+          onConfigure: (db) async {
+            await db.execute('PRAGMA foreign_keys = ON');
+          },
+          onCreate: (db, version) async {
+            await _createSchema(db);
+            await _insertDefaultData(db);
+          },
+          onUpgrade: (db, oldVersion, newVersion) async {
+            await _createSchema(db);
+          },
+        );
+      }
+
+      // On desktop (Windows/Linux/macOS), fall back to sqflite_common_ffi without encryption.
+      sqflite_ffi.sqfliteFfiInit();
+      final supportDir = await getApplicationSupportDirectory();
+      final path = p.join(supportDir.path, dbFileName);
+      final factory = sqflite_ffi.databaseFactoryFfi;
+
+      return factory.openDatabase(
         path,
-        version: schemaVersion,
-        password: password,
-        onConfigure: (db) async {
-          await db.execute('PRAGMA foreign_keys = ON');
-        },
-        onCreate: (db, version) async {
-          await _createSchema(db);
-          await _insertDefaultData(db);
-        },
-        onUpgrade: (db, oldVersion, newVersion) async {
-          await _createSchema(db);
-        },
+        options: sqflite_ffi.OpenDatabaseOptions(
+          version: schemaVersion,
+          onConfigure: (db) async {
+            await db.execute('PRAGMA foreign_keys = ON');
+          },
+          onCreate: (db, version) async {
+            await _createSchema(db);
+            await _insertDefaultData(db);
+          },
+          onUpgrade: (db, oldVersion, newVersion) async {
+            await _createSchema(db);
+          },
+        ),
+      );
+    } catch (e, st) {
+      throw ErrorHandler.handle(
+        e,
+        st,
+        context: 'DatabaseHelper._openEncrypted',
       );
     }
+  }
 
-    // On desktop (Windows/Linux/macOS), fall back to sqflite_common_ffi without encryption.
-    sqflite_ffi.sqfliteFfiInit();
-    final supportDir = await getApplicationSupportDirectory();
-    final path = p.join(supportDir.path, dbFileName);
-    final factory = sqflite_ffi.databaseFactoryFfi;
-
-    return factory.openDatabase(
-      path,
-      options: sqflite_ffi.OpenDatabaseOptions(
-        version: schemaVersion,
-        onConfigure: (db) async {
-          await db.execute('PRAGMA foreign_keys = ON');
-        },
-        onCreate: (db, version) async {
-          await _createSchema(db);
-          await _insertDefaultData(db);
-        },
-        onUpgrade: (db, oldVersion, newVersion) async {
-          await _createSchema(db);
-        },
-      ),
-    );
+  Future<T> _withErrorHandling<T>(
+    Future<T> Function() action,
+    String context,
+  ) async {
+    try {
+      return await action();
+    } catch (e, st) {
+      throw ErrorHandler.handle(e, st, context: context);
+    }
   }
 
   Future<void> _createSchema(dynamic db) async {
@@ -100,7 +128,9 @@ class DatabaseHelper {
         created_at TEXT NOT NULL
       );
     ''');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);',
+    );
 
     await db.execute('''
       CREATE TABLE IF NOT EXISTS categories (
@@ -208,12 +238,18 @@ class DatabaseHelper {
         created_at TEXT NOT NULL
       );
     ''');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_bills_bill_date ON bills(bill_date);');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_bills_customer_id ON bills(customer_id);');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_bills_bill_date ON bills(bill_date);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_bills_customer_id ON bills(customer_id);',
+    );
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_bills_payment_status ON bills(payment_status);',
     );
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_bills_bill_number ON bills(bill_number);');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_bills_bill_number ON bills(bill_number);',
+    );
 
     await db.execute('''
       CREATE TABLE IF NOT EXISTS bill_items (
@@ -753,8 +789,10 @@ class DatabaseHelper {
   }
 
   Future<int> insert(String table, Map<String, Object?> values) async {
-    final db = await database;
-    return db.insert(table, values);
+    return _withErrorHandling(() async {
+      final db = await database;
+      return db.insert(table, values);
+    }, 'DatabaseHelper.insert');
   }
 
   Future<List<Map<String, Object?>>> query(
@@ -769,19 +807,21 @@ class DatabaseHelper {
     int? limit,
     int? offset,
   }) async {
-    final db = await database;
-    return db.query(
-      table,
-      distinct: distinct,
-      columns: columns,
-      where: where,
-      whereArgs: whereArgs,
-      groupBy: groupBy,
-      having: having,
-      orderBy: orderBy,
-      limit: limit,
-      offset: offset,
-    );
+    return _withErrorHandling(() async {
+      final db = await database;
+      return db.query(
+        table,
+        distinct: distinct,
+        columns: columns,
+        where: where,
+        whereArgs: whereArgs,
+        groupBy: groupBy,
+        having: having,
+        orderBy: orderBy,
+        limit: limit,
+        offset: offset,
+      );
+    }, 'DatabaseHelper.query');
   }
 
   Future<int> update(
@@ -790,8 +830,10 @@ class DatabaseHelper {
     String? where,
     List<Object?>? whereArgs,
   }) async {
-    final db = await database;
-    return db.update(table, values, where: where, whereArgs: whereArgs);
+    return _withErrorHandling(() async {
+      final db = await database;
+      return db.update(table, values, where: where, whereArgs: whereArgs);
+    }, 'DatabaseHelper.update');
   }
 
   Future<int> delete(
@@ -799,57 +841,66 @@ class DatabaseHelper {
     String? where,
     List<Object?>? whereArgs,
   }) async {
-    final db = await database;
-    return db.delete(table, where: where, whereArgs: whereArgs);
+    return _withErrorHandling(() async {
+      final db = await database;
+      return db.delete(table, where: where, whereArgs: whereArgs);
+    }, 'DatabaseHelper.delete');
   }
 
   Future<List<Map<String, Object?>>> rawQuery(
     String sql, [
     List<Object?>? arguments,
   ]) async {
-    final db = await database;
-    return db.rawQuery(sql, arguments);
+    return _withErrorHandling(() async {
+      final db = await database;
+      return db.rawQuery(sql, arguments);
+    }, 'DatabaseHelper.rawQuery');
   }
 
   Future<T> runInTransaction<T>(Future<T> Function(dynamic txn) action) async {
-    final db = await database;
-    return db.transaction<T>((txn) async => action(txn));
+    return _withErrorHandling(() async {
+      final db = await database;
+      return db.transaction<T>((txn) async => action(txn));
+    }, 'DatabaseHelper.runInTransaction');
   }
 
   Future<String> exportToJson() async {
-    final db = await database;
-    const tables = [
-      'settings',
-      'users',
-      'categories',
-      'products',
-      'transliteration_dictionary',
-      'customers',
-      'bills',
-      'bill_items',
-      'stock_log',
-      'udhaar_ledger',
-      'bill_payments',
-      'expense_accounts',
-      'expenses',
-      'khata_ledger',
-      'returns',
-      'return_items',
-      'replace_transactions',
-      'reminder_log',
-    ];
+    return _withErrorHandling(() async {
+      final db = await database;
+      const tables = [
+        'settings',
+        'users',
+        'categories',
+        'products',
+        'transliteration_dictionary',
+        'customers',
+        'bills',
+        'bill_items',
+        'stock_log',
+        'udhaar_ledger',
+        'bill_payments',
+        'expense_accounts',
+        'expenses',
+        'khata_ledger',
+        'returns',
+        'return_items',
+        'replace_transactions',
+        'reminder_log',
+      ];
 
-    final Map<String, Object?> out = {};
-    for (final t in tables) {
-      out[t] = await db.query(t);
-    }
-    return jsonEncode(out);
+      final Map<String, Object?> out = {};
+      for (final t in tables) {
+        out[t] = await db.query(t);
+      }
+      return jsonEncode(out);
+    }, 'DatabaseHelper.exportToJson');
   }
 
   Future<void> close() async {
-    final db = _db;
-    _db = null;
-    if (db != null) await db.close();
+    return _withErrorHandling(() async {
+      final db = _db;
+      _db = null;
+      if (db != null) await db.close();
+    }, 'DatabaseHelper.close');
   }
 }
-
