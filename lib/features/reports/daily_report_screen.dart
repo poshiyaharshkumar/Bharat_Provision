@@ -72,7 +72,12 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     return FutureBuilder<DailyReportData>(
       future: repoFuture.then((repo) => repo.getDailyReport(_selectedDate)),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const CircularProgressIndicator();
+        if (snapshot.hasError) {
+          return Center(child: Text('Error loading report: ${snapshot.error}'));
+        }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
         final data = snapshot.data!;
         return Column(
           children: [
@@ -229,7 +234,12 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     return FutureBuilder<DailyReportData>(
       future: repoFuture.then((repo) => repo.getDailyReport(_selectedDate)),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const CircularProgressIndicator();
+        if (snapshot.hasError) {
+          return Center(child: Text('Error loading bills: ${snapshot.error}'));
+        }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
         final data = snapshot.data!;
         return Card(
           child: Padding(
@@ -245,9 +255,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                 ...data.bills.map(
                   (bill) => ListTile(
                     title: Text('Bill #${bill.id}'),
-                    subtitle: Text(
-                      'Customer: ${bill.customerNameSnapshot ?? 'N/A'}',
-                    ),
+                    subtitle: Text('Customer: ${bill.customerId ?? '-'}'),
                     trailing: Text(formatCurrency(bill.totalAmount)),
                     onTap: () {
                       // TODO: Open bill detail

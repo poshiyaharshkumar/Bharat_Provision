@@ -175,3 +175,25 @@ final billingTabsProvider =
     StateNotifierProvider<BillingTabsNotifier, BillingTabsState>((ref) {
       return BillingTabsNotifier();
     });
+
+// Provider for shop details needed for bill display
+final shopDetailsForBillingProvider = FutureProvider<Map<String, String>>((
+  ref,
+) async {
+  try {
+    final repo = await ref.watch(settingsRepositoryFutureProvider.future);
+    return {
+      'shop_name': await repo.get('shop_name'),
+      'shop_address': await repo.get('shop_address'),
+      'shop_phone': await repo.get('shop_phone'),
+      'gstin': await repo.get('gstin'),
+      'bill_footer': await repo.get('bill_footer'),
+    };
+  } catch (e, st) {
+    throw ErrorHandler.handle(
+      e,
+      st,
+      context: 'BillingProviders.shopDetailsForBillingProvider',
+    );
+  }
+});

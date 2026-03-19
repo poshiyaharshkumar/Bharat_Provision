@@ -133,7 +133,12 @@ class _PLReportScreenState extends ConsumerState<PLReportScreen> {
     return FutureBuilder<PLSummary>(
       future: repoFuture.then((repo) => repo.getPLSummary(startEpoch, endEpoch)),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const CircularProgressIndicator();
+        if (snapshot.hasError) {
+          return Center(child: Text('Error loading report: ${snapshot.error}'));
+        }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CircularProgressIndicator();
+        }
         final summary = snapshot.data!;
         return Column(
           children: [
@@ -206,7 +211,12 @@ class _PLReportScreenState extends ConsumerState<PLReportScreen> {
     return FutureBuilder<PLSummary>(
       future: repoFuture.then((repo) => repo.getPLSummary(startEpoch, endEpoch)),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const SizedBox.shrink();
+        if (snapshot.hasError) {
+          return Center(child: Text('Error loading sales breakdown: ${snapshot.error}'));
+        }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox.shrink();
+        }
         final summary = snapshot.data!;
         return Card(
           child: Padding(

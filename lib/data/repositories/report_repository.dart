@@ -1,42 +1,61 @@
 import 'package:sqflite/sqflite.dart';
 
+import '../models/bill.dart';
+import '../models/item.dart';
 import '../../shared/models/product_model.dart';
-import '../../shared/models/bill_model.dart';
 
+/// Repository powering the reporting/dashboard screens.
+///
+/// This uses the same database schema as the rest of the application
+/// (the `AppDatabase` tables like `bills`, `items`, etc.) and is intended
+/// to be used by the dashboard / reports screens.
 class ReportRepository {
   ReportRepository(this._db);
 
   final Database _db;
 
+  /// Returns a summary of sales for a given range, adjusting for returns.
   Future<SalesSummary> getSalesSummary(int startEpoch, int endEpoch) async {
-    // Returns should reduce the sales total on the day of return (not original bill date).
-    final startIso = DateTime.fromMillisecondsSinceEpoch(
-      startEpoch,
-    ).toIso8601String();
-    final endIso = DateTime.fromMillisecondsSinceEpoch(
-      endEpoch,
-    ).toIso8601String();
-
-    final result = await _db.rawQuery(
+    // Sales from cash/upi/card
+    final salesResult = await _db.rawQuery(
       '''
-      SELECT
-        COUNT(*) as bill_count,
-        COALESCE(SUM(total_amount), 0)
-          - COALESCE((
-              SELECT SUM(total_return_value) FROM returns
-              WHERE return_date >= ? AND return_date <= ?
-            ), 0) as total_sales,
-        COALESCE(AVG(total_amount), 0) as avg_bill
+      SELECT COALESCE(SUM(total_amount), 0) as total_sales
+      FROM bills
+      WHERE date_time >= ? AND date_time <= ?
+        AND payment_mode IN ('cash', 'upi', 'card')
+      ''',
+      [startEpoch, endEpoch],
+    );
+
+    // Returns within the same range
+    final returnsResult = await _db.rawQuery(
+      '''
+      SELECT COALESCE(SUM(total_return_value), 0) as total_returns
+      FROM returns
+      WHERE return_date >= ? AND return_date <= ?
+      ''',
+      [startEpoch, endEpoch],
+    );
+
+    final billCountResult = await _db.rawQuery(
+      '''
+      SELECT COUNT(*) as bill_count
       FROM bills
       WHERE date_time >= ? AND date_time <= ?
       ''',
-      [startIso, endIso, startEpoch, endEpoch],
+      [startEpoch, endEpoch],
     );
-    final row = result.first;
+
+    final totalSales =
+        (salesResult.first['total_sales'] as num?)?.toDouble() ?? 0;
+    final totalReturns =
+        (returnsResult.first['total_returns'] as num?)?.toDouble() ?? 0;
+    final billCount = (billCountResult.first['bill_count'] as int?) ?? 0;
+
     return SalesSummary(
-      billCount: row['bill_count'] as int? ?? 0,
-      totalSales: (row['total_sales'] as num?)?.toDouble() ?? 0,
-      avgBillValue: (row['avg_bill'] as num?)?.toDouble() ?? 0,
+      billCount: billCount,
+      totalSales: totalSales - totalReturns,
+      avgBillValue: billCount > 0 ? (totalSales - totalReturns) / billCount : 0,
     );
   }
 
@@ -46,6 +65,7 @@ class ReportRepository {
       'khata_entries',
       orderBy: 'customer_id ASC, date_time DESC, id DESC',
     );
+
     final latestBalance = <int, double>{};
     for (final row in entries) {
       final cid = row['customer_id'] as int;
@@ -53,6 +73,7 @@ class ReportRepository {
         latestBalance[cid] = (row['balance_after'] as num?)?.toDouble() ?? 0;
       }
     }
+
     final out = <OutstandingCustomer>[];
     for (final c in customers) {
       final id = c['id'] as int;
@@ -67,6 +88,7 @@ class ReportRepository {
         );
       }
     }
+
     out.sort((a, b) => b.balance.compareTo(a.balance));
     return out;
   }
@@ -75,17 +97,16 @@ class ReportRepository {
     final today = DateTime.now();
     final start = DateTime(today.year, today.month, today.day);
     final end = start.add(const Duration(days: 1));
-    final startIso = start.toIso8601String();
-    final endIso = end.toIso8601String();
+    final startEpoch = start.millisecondsSinceEpoch;
+    final endEpoch = end.millisecondsSinceEpoch;
 
-    // Only cash, upi, card sales, exclude udhaar
     final result = await _db.rawQuery(
       '''
       SELECT COALESCE(SUM(total_amount), 0) as sales
       FROM bills
       WHERE date_time >= ? AND date_time < ? AND payment_mode IN ('cash', 'upi', 'card')
       ''',
-      [startIso, endIso],
+      [startEpoch, endEpoch],
     );
     return (result.first['sales'] as num?)?.toDouble() ?? 0;
   }
@@ -94,8 +115,8 @@ class ReportRepository {
     final today = DateTime.now();
     final start = DateTime(today.year, today.month, today.day);
     final end = start.add(const Duration(days: 1));
-    final startIso = start.toIso8601String();
-    final endIso = end.toIso8601String();
+    final startEpoch = start.millisecondsSinceEpoch;
+    final endEpoch = end.millisecondsSinceEpoch;
 
     final result = await _db.rawQuery(
       '''
@@ -103,7 +124,7 @@ class ReportRepository {
       FROM expenses
       WHERE date >= ? AND date < ?
       ''',
-      [startIso, endIso],
+      [startEpoch, endEpoch],
     );
     return (result.first['expenses'] as num?)?.toDouble() ?? 0;
   }
@@ -112,8 +133,8 @@ class ReportRepository {
     final today = DateTime.now();
     final start = DateTime(today.year, today.month, today.day);
     final end = start.add(const Duration(days: 1));
-    final startIso = start.toIso8601String();
-    final endIso = end.toIso8601String();
+    final startEpoch = start.millisecondsSinceEpoch;
+    final endEpoch = end.millisecondsSinceEpoch;
 
     final result = await _db.rawQuery(
       '''
@@ -121,18 +142,35 @@ class ReportRepository {
       FROM udhaar_payments
       WHERE date >= ? AND date < ?
       ''',
-      [startIso, endIso],
+      [startEpoch, endEpoch],
     );
     return (result.first['collected'] as num?)?.toDouble() ?? 0;
   }
 
   Future<List<Product>> getLowStockProducts() async {
-    final result = await _db.query(
-      'products',
-      where: 'current_stock < min_stock',
-      orderBy: 'name ASC',
+    final rows = await _db.query(
+      'items',
+      where: 'is_active = 1 AND current_stock <= low_stock_threshold',
+      orderBy: 'name_gu ASC',
     );
-    return result.map((row) => Product.fromMap(row)).toList();
+    return rows.map((row) {
+      return Product(
+        id: row['id'] as int?,
+        nameGujarati: row['name_gu'] as String,
+        nameEnglish: null,
+        transliterationKeys: '',
+        categoryId: row['category_id'] as int?,
+        unitType: row['unit'] as String? ?? '',
+        buyPrice: (row['purchase_price'] as num?)?.toDouble() ?? 0,
+        sellPrice: (row['sale_price'] as num?)?.toDouble() ?? 0,
+        stockQty: (row['current_stock'] as num?)?.toDouble() ?? 0,
+        minStockQty: (row['low_stock_threshold'] as num?)?.toDouble() ?? 0,
+        isActive: (row['is_active'] as int? ?? 1) == 1,
+        barcode: row['barcode'] as String?,
+        createdAt: null,
+        updatedAt: null,
+      );
+    }).toList();
   }
 
   Future<List<DailySales>> get7DaySales() async {
@@ -144,30 +182,36 @@ class ReportRepository {
       now.month,
       now.day,
     ).add(const Duration(days: 1));
+    final startEpoch = startDate.millisecondsSinceEpoch;
+    final endEpoch = endDate.millisecondsSinceEpoch;
 
-    final result = await _db.rawQuery(
+    final rows = await _db.rawQuery(
       '''
-      SELECT
-        DATE(date_time) as date,
-        COALESCE(SUM(total_amount), 0) as sales
+      SELECT date_time, total_amount
       FROM bills
       WHERE date_time >= ? AND date_time < ? AND payment_mode IN ('cash', 'upi', 'card')
-      GROUP BY DATE(date_time)
-      ORDER BY DATE(date_time) ASC
       ''',
-      [startDate.toIso8601String(), endDate.toIso8601String()],
+      [startEpoch, endEpoch],
     );
 
     final salesMap = <String, double>{};
-    for (final row in result) {
-      salesMap[row['date'] as String] = (row['sales'] as num?)?.toDouble() ?? 0;
+    for (final row in rows) {
+      final epoch = (row['date_time'] as num?)?.toInt() ?? 0;
+      final day = DateTime.fromMillisecondsSinceEpoch(epoch);
+      final key = DateTime(
+        day.year,
+        day.month,
+        day.day,
+      ).toIso8601String().split('T').first;
+      salesMap[key] =
+          (salesMap[key] ?? 0) + (row['total_amount'] as num?)?.toDouble() ?? 0;
     }
 
     final out = <DailySales>[];
     for (int i = 0; i < 7; i++) {
-      final date = startDate.add(Duration(days: i));
-      final dateStr = date.toIso8601String().split('T').first;
-      out.add(DailySales(date: date, sales: salesMap[dateStr] ?? 0));
+      final d = startDate.add(Duration(days: i));
+      final key = d.toIso8601String().split('T').first;
+      out.add(DailySales(date: d, sales: salesMap[key] ?? 0));
     }
     return out;
   }
@@ -193,12 +237,12 @@ class ReportRepository {
     final sales = await getTodaysSales();
     final expenses = await getTodaysExpenses();
     final collected = await getTodaysUdhaarCollected();
-    // Net = cash sales + collected udhaar - expenses - returns
+
     final today = DateTime.now();
     final start = DateTime(today.year, today.month, today.day);
     final end = start.add(const Duration(days: 1));
-    final startIso = start.toIso8601String();
-    final endIso = end.toIso8601String();
+    final startEpoch = start.millisecondsSinceEpoch;
+    final endEpoch = end.millisecondsSinceEpoch;
 
     final returnsResult = await _db.rawQuery(
       '''
@@ -206,7 +250,7 @@ class ReportRepository {
       FROM returns
       WHERE return_date >= ? AND return_date < ?
       ''',
-      [startIso, endIso],
+      [startEpoch, endEpoch],
     );
     final returns = (returnsResult.first['returns'] as num?)?.toDouble() ?? 0;
 
@@ -217,8 +261,8 @@ class ReportRepository {
     final today = DateTime.now();
     final start = DateTime(today.year, today.month, today.day);
     final end = start.add(const Duration(days: 1));
-    final startIso = start.toIso8601String();
-    final endIso = end.toIso8601String();
+    final startEpoch = start.millisecondsSinceEpoch;
+    final endEpoch = end.millisecondsSinceEpoch;
 
     final result = await _db.rawQuery(
       '''
@@ -226,19 +270,12 @@ class ReportRepository {
       FROM bills
       WHERE date_time >= ? AND date_time < ?
       ''',
-      [startIso, endIso],
+      [startEpoch, endEpoch],
     );
     return (result.first['count'] as int?) ?? 0;
   }
 
   Future<PLSummary> getPLSummary(int startEpoch, int endEpoch) async {
-    final startIso = DateTime.fromMillisecondsSinceEpoch(
-      startEpoch,
-    ).toIso8601String();
-    final endIso = DateTime.fromMillisecondsSinceEpoch(
-      endEpoch,
-    ).toIso8601String();
-
     // Sales by mode
     final salesResult = await _db.rawQuery(
       '''
@@ -247,8 +284,9 @@ class ReportRepository {
       WHERE date_time >= ? AND date_time <= ? AND payment_mode IN ('cash', 'upi', 'card')
       GROUP BY payment_mode
       ''',
-      [startIso, endIso],
+      [startEpoch, endEpoch],
     );
+
     final salesByMode = <String, double>{};
     for (final row in salesResult) {
       salesByMode[row['payment_mode'] as String] =
@@ -262,7 +300,7 @@ class ReportRepository {
       FROM udhaar_payments
       WHERE date >= ? AND date <= ?
       ''',
-      [startIso, endIso],
+      [startEpoch, endEpoch],
     );
     final udhaarCollected =
         (udhaarResult.first['collected'] as num?)?.toDouble() ?? 0;
@@ -276,7 +314,7 @@ class ReportRepository {
       WHERE e.date >= ? AND e.date <= ?
       GROUP BY ea.name
       ''',
-      [startIso, endIso],
+      [startEpoch, endEpoch],
     );
     final expensesByAccount = <String, double>{};
     for (final row in expensesResult) {
@@ -291,7 +329,7 @@ class ReportRepository {
       FROM returns
       WHERE return_date >= ? AND return_date <= ?
       ''',
-      [startIso, endIso],
+      [startEpoch, endEpoch],
     );
     final returns = (returnsResult.first['returns'] as num?)?.toDouble() ?? 0;
 
@@ -312,87 +350,158 @@ class ReportRepository {
   }
 
   Future<List<DailyPL>> getDailyPL(int startEpoch, int endEpoch) async {
-    final startIso = DateTime.fromMillisecondsSinceEpoch(
-      startEpoch,
-    ).toIso8601String();
-    final endIso = DateTime.fromMillisecondsSinceEpoch(
-      endEpoch,
-    ).toIso8601String();
+    final salesByDay = <String, double>{};
+    final udhaarByDay = <String, double>{};
+    final expensesByDay = <String, double>{};
+    final returnsByDay = <String, double>{};
 
-    final result = await _db.rawQuery(
+    final salesRows = await _db.rawQuery(
       '''
-      SELECT
-        DATE(b.date_time) as date,
-        COALESCE(SUM(CASE WHEN b.payment_mode IN ('cash', 'upi', 'card') THEN b.total_amount ELSE 0 END), 0) as sales,
-        COALESCE((SELECT SUM(up.amount) FROM udhaar_payments up WHERE DATE(up.date) = DATE(b.date_time)), 0) as udhaar_collected,
-        COALESCE((SELECT SUM(e.amount) FROM expenses e WHERE DATE(e.date) = DATE(b.date_time)), 0) as expenses,
-        COALESCE((SELECT SUM(r.total_return_value) FROM returns r WHERE DATE(r.return_date) = DATE(b.date_time)), 0) as returns
-      FROM bills b
-      WHERE b.date_time >= ? AND b.date_time <= ?
-      GROUP BY DATE(b.date_time)
-      ORDER BY DATE(b.date_time) ASC
+      SELECT date_time, total_amount, payment_mode
+      FROM bills
+      WHERE date_time >= ? AND date_time < ?
       ''',
-      [startIso, endIso],
+      [startEpoch, endEpoch],
     );
+    for (final row in salesRows) {
+      final epoch = (row['date_time'] as num?)?.toInt() ?? 0;
+      final day = DateTime.fromMillisecondsSinceEpoch(epoch);
+      final key = DateTime(
+        day.year,
+        day.month,
+        day.day,
+      ).toIso8601String().split('T').first;
+      final amount = (row['total_amount'] as num?)?.toDouble() ?? 0;
+      final mode = row['payment_mode'] as String? ?? '';
+      if (mode == 'cash' || mode == 'upi' || mode == 'card') {
+        salesByDay[key] = (salesByDay[key] ?? 0) + amount;
+      }
+    }
 
-    return result.map((row) {
-      final sales = (row['sales'] as num?)?.toDouble() ?? 0;
-      final udhaar = (row['udhaar_collected'] as num?)?.toDouble() ?? 0;
-      final expenses = (row['expenses'] as num?)?.toDouble() ?? 0;
-      final returns = (row['returns'] as num?)?.toDouble() ?? 0;
+    final udhaarRows = await _db.rawQuery(
+      '''
+      SELECT date, amount
+      FROM udhaar_payments
+      WHERE date >= ? AND date < ?
+      ''',
+      [startEpoch, endEpoch],
+    );
+    for (final row in udhaarRows) {
+      final epoch = (row['date'] as num?)?.toInt() ?? 0;
+      final day = DateTime.fromMillisecondsSinceEpoch(epoch);
+      final key = DateTime(
+        day.year,
+        day.month,
+        day.day,
+      ).toIso8601String().split('T').first;
+      udhaarByDay[key] =
+          (udhaarByDay[key] ?? 0) + ((row['amount'] as num?)?.toDouble() ?? 0);
+    }
+
+    final expensesRows = await _db.rawQuery(
+      '''
+      SELECT date, amount
+      FROM expenses
+      WHERE date >= ? AND date < ?
+      ''',
+      [startEpoch, endEpoch],
+    );
+    for (final row in expensesRows) {
+      final epoch = (row['date'] as num?)?.toInt() ?? 0;
+      final day = DateTime.fromMillisecondsSinceEpoch(epoch);
+      final key = DateTime(
+        day.year,
+        day.month,
+        day.day,
+      ).toIso8601String().split('T').first;
+      expensesByDay[key] =
+          (expensesByDay[key] ?? 0) +
+          ((row['amount'] as num?)?.toDouble() ?? 0);
+    }
+
+    final returnsRows = await _db.rawQuery(
+      '''
+      SELECT return_date, total_return_value
+      FROM returns
+      WHERE return_date >= ? AND return_date < ?
+      ''',
+      [startEpoch, endEpoch],
+    );
+    for (final row in returnsRows) {
+      final epoch = (row['return_date'] as num?)?.toInt() ?? 0;
+      final day = DateTime.fromMillisecondsSinceEpoch(epoch);
+      final key = DateTime(
+        day.year,
+        day.month,
+        day.day,
+      ).toIso8601String().split('T').first;
+      returnsByDay[key] =
+          (returnsByDay[key] ?? 0) +
+          ((row['total_return_value'] as num?)?.toDouble() ?? 0);
+    }
+
+    final out = <DailyPL>[];
+    final startDate = DateTime.fromMillisecondsSinceEpoch(startEpoch);
+    final endDate = DateTime.fromMillisecondsSinceEpoch(endEpoch);
+    final days = endDate.difference(startDate).inDays;
+
+    for (int i = 0; i < days; i++) {
+      final day = startDate.add(Duration(days: i));
+      final key = DateTime(
+        day.year,
+        day.month,
+        day.day,
+      ).toIso8601String().split('T').first;
+      final sales = salesByDay[key] ?? 0;
+      final udhaar = udhaarByDay[key] ?? 0;
+      final expenses = expensesByDay[key] ?? 0;
+      final returns = returnsByDay[key] ?? 0;
       final net = sales + udhaar - expenses - returns;
-      return DailyPL(
-        date: DateTime.parse(row['date'] as String),
-        netProfit: net,
-      );
-    }).toList();
+      out.add(DailyPL(date: day, netProfit: net));
+    }
+
+    return out;
   }
 
   Future<DailyReportData> getDailyReport(DateTime date) async {
     final start = DateTime(date.year, date.month, date.day);
     final end = start.add(const Duration(days: 1));
-    final startIso = start.toIso8601String();
-    final endIso = end.toIso8601String();
+    final startEpoch = start.millisecondsSinceEpoch;
+    final endEpoch = end.millisecondsSinceEpoch;
 
-    // Bills
     final billsResult = await _db.query(
       'bills',
       where: 'date_time >= ? AND date_time < ?',
-      whereArgs: [startIso, endIso],
+      whereArgs: [startEpoch, endEpoch],
       orderBy: 'date_time DESC',
     );
     final bills = billsResult.map((row) => Bill.fromMap(row)).toList();
 
-    // Bill count
     final billCount = bills.length;
 
-    // Sales by mode
     final salesByMode = <String, double>{};
     for (final bill in bills) {
-      if (bill.paymentMode != null && bill.paymentMode != 'udhaar') {
-        salesByMode[bill.paymentMode!] =
-            (salesByMode[bill.paymentMode!] ?? 0) + bill.totalAmount;
+      final mode = bill.paymentMode;
+      if (mode != null && mode != 'udhaar') {
+        salesByMode[mode] = (salesByMode[mode] ?? 0) + bill.totalAmount;
       }
     }
 
-    // Udhaar given
     final udhaarGiven = bills
         .where((b) => b.paymentMode == 'udhaar')
         .fold(0.0, (sum, b) => sum + b.totalAmount);
 
-    // Udhaar collected
     final udhaarResult = await _db.rawQuery(
       '''
       SELECT COALESCE(SUM(amount), 0) as collected
       FROM udhaar_payments
       WHERE date >= ? AND date < ?
       ''',
-      [startIso, endIso],
+      [startEpoch, endEpoch],
     );
     final udhaarCollected =
         (udhaarResult.first['collected'] as num?)?.toDouble() ?? 0;
 
-    // Expenses by category
     final expensesResult = await _db.rawQuery(
       '''
       SELECT ea.name, SUM(e.amount) as amount
@@ -401,8 +510,9 @@ class ReportRepository {
       WHERE e.date >= ? AND e.date < ?
       GROUP BY ea.name
       ''',
-      [startIso, endIso],
+      [startEpoch, endEpoch],
     );
+
     final expensesByCategory = <String, double>{};
     for (final row in expensesResult) {
       expensesByCategory[row['name'] as String] =

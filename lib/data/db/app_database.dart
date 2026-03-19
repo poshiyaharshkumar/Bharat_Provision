@@ -9,7 +9,8 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 class AppDatabase {
   AppDatabase._();
 
-  static const int schemaVersion = 1;
+  // Increment this when making schema changes.
+  static const int schemaVersion = 2;
   static const String dbFileName = 'kirana_shop.db';
 
   static Database? _instance;
@@ -138,7 +139,9 @@ class AppDatabase {
         balance_after REAL NOT NULL
       )
     ''');
-    await db.execute('CREATE INDEX idx_khata_customer ON khata_entries(customer_id)');
+    await db.execute(
+      'CREATE INDEX idx_khata_customer ON khata_entries(customer_id)',
+    );
     await db.execute('CREATE INDEX idx_khata_date ON khata_entries(date_time)');
 
     await db.execute('''
@@ -168,11 +171,71 @@ class AppDatabase {
       )
     ''');
 
+    // Tables required by reporting and billing features
+    await _createReportingTables(db);
+
     await _insertDefaults(db);
   }
 
-  static Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Future migrations go here
+  static Future<void> _onUpgrade(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
+    if (oldVersion < 2) {
+      await _createReportingTables(db);
+    }
+  }
+
+  static Future<void> _createReportingTables(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS expense_accounts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        is_active INTEGER DEFAULT 1
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS expenses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        expense_account_id INTEGER REFERENCES expense_accounts(id),
+        amount REAL NOT NULL,
+        date INTEGER NOT NULL,
+        description TEXT
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date)',
+    );
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS udhaar_payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_id INTEGER REFERENCES customers(id),
+        amount REAL NOT NULL,
+        date INTEGER NOT NULL,
+        note TEXT
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_udhaar_payments_date ON udhaar_payments(date)',
+    );
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS returns (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        original_bill_id INTEGER REFERENCES bills(id),
+        customer_id INTEGER REFERENCES customers(id),
+        return_date INTEGER NOT NULL,
+        total_return_value REAL NOT NULL,
+        return_mode TEXT,
+        notes TEXT
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_returns_return_date ON returns(return_date)',
+    );
   }
 
   static Future<void> _insertDefaults(Database db) async {
@@ -207,8 +270,20 @@ class AppDatabase {
   static Future<String> exportToJson() async {
     final db = await instance;
     const tables = [
-      'settings', 'users', 'categories', 'items', 'customers',
-      'bills', 'bill_items', 'khata_entries', 'purchases', 'purchase_items',
+      'settings',
+      'users',
+      'categories',
+      'items',
+      'customers',
+      'bills',
+      'bill_items',
+      'khata_entries',
+      'purchases',
+      'purchase_items',
+      'expense_accounts',
+      'expenses',
+      'udhaar_payments',
+      'returns',
     ];
     final Map<String, dynamic> out = {'schema_version': schemaVersion};
     for (final t in tables) {
@@ -227,15 +302,31 @@ class AppDatabase {
     final data = jsonDecode(jsonStr) as Map<String, dynamic>;
     await db.transaction((txn) async {
       const tables = [
-        'purchase_items', 'purchases', 'khata_entries', 'bill_items', 'bills',
-        'items', 'categories', 'customers', 'users', 'settings',
+        'purchase_items',
+        'purchases',
+        'khata_entries',
+        'bill_items',
+        'bills',
+        'items',
+        'categories',
+        'customers',
+        'users',
+        'settings',
+        'expense_accounts',
+        'expenses',
+        'udhaar_payments',
+        'returns',
       ];
       for (final t in tables) {
         final rows = data[t] as List<dynamic>?;
         if (rows == null || rows.isEmpty) continue;
         for (final row in rows) {
           final map = Map<String, Object?>.from(row as Map);
-          await txn.insert(t, map, conflictAlgorithm: ConflictAlgorithm.replace);
+          await txn.insert(
+            t,
+            map,
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
         }
       }
     });
