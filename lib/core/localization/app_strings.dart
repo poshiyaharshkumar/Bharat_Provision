@@ -130,4 +130,95 @@ class AppStrings {
   static const String deleteCustomerTitle = 'ગ્રાહક કાઢી નાખો';
   static const String deleteCustomerMessage =
       'શું તમે ચોક્કસ આ ગ્રાહક કાઢી નાખવા માંગો છો?';
+
+  // Edge case errors - SQLCipher
+  static const String wrongPinError = 'ખોટો PIN';
+  static const String pinLocked = 'PIN લક થઈ ગયો. %s સેકન્ડમાં ફરી પ્રયાસ કરો.';
+  static const String pinAttempts = '%d પ્રયાસ બાકી છે.';
+  static const String databaseError =
+      'ડેટાબેસ ખોલી શકાયું નથી. ફરી પ્રયાસ કરો.';
+
+  // Edge case errors - Billing
+  static const String billSaveError =
+      'બીલ સેવ કરી શકાયું નથી. કૃપા કરીને ફરી પ્રયાસ કરો.';
+  static const String billSavePartialRollback =
+      'બીલ સેવ કરી શકાયું નથી. તમામ પરિવર્તનો રદ કરવામાં આવ્યા.';
+  static const String invalidBillAmount = 'અમાન્ય બીલ રકમ.';
+  static const String zeroSellPrice = 'વેચાણ ભાવ શૂન્ય નથી હોઈ શકતો.';
+
+  // Edge case errors - Customers
+  static const String walkInDuplicate = 'શક્ય ડુપ્લિકેટ ગ્રાહક';
+  static const String walkInDuplicateMessage =
+      'આ નામનો ગ્રાહક આજે પહેલેથી છે. શું જેવો રહે તે વાપરવો છે?';
+  static const String creditLimitExceeded = 'ક્રેડિટ મર્યાદા પાર થઈ';
+  static const String creditLimitExceededMsg =
+      'આ ગ્રાહક માટે ક્રેડિટ મર્યાદા %s દ્વારા પાર થશે.';
+  static const String creditLimitOverride = 'મર્યાદા અવગણો';
+
+  // Edge case errors - Stock
+  static const String outOfStock = 'સ્ટોક ઉપલબ્ધ નથી';
+  static const String insufficientStock = 'પર્યાપ્ત સ્ટોક નથી.';
+  static const String addStockShortcut = 'સ્ટોક ઉમેરો';
+
+  // Edge case errors - Returns
+  static const String returnQtyExceeded = 'રીટર્ન માત્રા મૂળ ખરીદીથી વધી ગઈ.';
+  static const String replacedProductZeroStock =
+      'બદલી જતું ઉત્પાદ શૂન્ય સ્ટોકમાં છે.';
+  static const String replaceZeroStockWarning =
+      'આ ઉત્પાદનનું સ્ટોક શૂન્ય છે. શું તમે ચાલુ રાખવા માંગો છો?';
+
+  // UX Polish - Loading & Messages
+  static const String waiting = 'રાહ જુઓ...';
+  static const String success = 'સફળ';
+  static const String error = 'ભૂલ';
+  static const String successMessage = 'ક્રિયા સફળ રહી.';
+  static const String billSavingSuccess = 'બીલ સફળતાપૂર્વક સેવ થયું!';
+  static const String billPrintingSuccess = 'બીલ મુద્રણ કતારમાં છે...';
+
+  // UX Polish - Confirmations
+  static const String deleteConfirmationTitle =
+      'શું તમે ખરેખર કાઢી નાખવા માગો છો?';
+  static const String deleteConfirmationMessage =
+      'આ ક્રિયા પૂર્વવત્ કરી શકાશે નહીં.';
+  static const String deleteConfirmButton = 'હા, કાઢી નાખો';
+  static const String deleteCancelButton = 'ના, રાખો';
+
+  // UX Polish - Forms
+  static const String namePlaceholder = 'નામ દાખલ કરો';
+  static const String searchPlaceholder = 'શોધો...';
+  static const String translit_hint =
+      'ધ્વનિશાસ્ત્ર: marchu, chaval, tel, atta...';
+
+  // Printer & Printing
+  static const String printerNotConnected = 'પ્રિન્ટર જોડાયેલું નથી.';
+  static const String printerError = 'પ્રિન્ટર ભૂલ: %s';
+  static const String retryPrint = 'ફરી પ્રયાસ કરો';
+  static const String skipPrint = 'છોડી દો';
+  static const String reprintBill = 'બીલ ફરી છાપો';
+
+  // Session & Auth
+  static const String sessionExpired = 'સમય સમાપ્ત';
+  static const String sessionExpiredMessage =
+      'તમારો સમય સમાપ્ત થઈ ગયો. ફરી લૉગ ઇન કરો.';
+  static const String logout = 'લૉગ આઉટ કરો';
+  static const String login = 'લૉગ ઇન કરો';
+  static const String superadmin = 'સુપર વ્યવસ્થાપક';
+  static const String admin = 'વ્યવસ્થાપક';
+  static const String employee = 'કર્મચારી';
+
+  // First Launch Wizard
+  static const String firstLaunchWizard = 'પ્રથમ લঞ્ચ ઉપકરણ';
+  static const String wizardIncomplete = 'અધૂરો ઉપકરણ';
+  static const String wizardIncompleteMessage =
+      'ઉપકરણ પૂર્ણ કરવા માટે તમારે સર્વર સેટআપ શેષ રાખવો આવશ્યક છે.';
+  static const String wizardCannotSkip =
+      'તમે PIN સેટআપ પી સ્ટેપ છોડી શકતા નથી.';
+
+  // Multi-tab Billing
+  static const String unsavedChanges = 'અસંચited પરિવર્તનો';
+  static const String tabClosing = 'આ ટેબમાં અસંચited પરિવર્તનો છે.';
+
+  // Developer Footer
+  static const String developedBy = 'દ્વારા વિકસિત: %s';
+  static const String version = 'સંસ્કરણ %s';
 }

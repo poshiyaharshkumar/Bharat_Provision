@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/widgets/app_scaffold.dart';
+import '../core/auth/role_guard.dart';
 import '../features/billing/billing_home_screen.dart';
 import '../features/inventory/category_list_screen.dart';
 import '../features/inventory/item_list_screen.dart';
@@ -82,16 +83,29 @@ class AppRouter {
       case inventory:
         return _buildShell(1, const ItemListScreen());
       case customers:
-        return _buildShell(2, const CustomerListScreen());
+        return _buildShellGuarded(
+          2,
+          const CustomerListScreen(),
+          allowedRoles: const ['admin', 'superadmin'],
+        );
       case khata:
-        return _buildShell(
+        return _buildShellGuarded(
           2,
           const KhataScreen(),
-        ); // same index? Wait, perhaps change index.
+          allowedRoles: const ['admin', 'superadmin'],
+        );
       case reports:
-        return _buildShell(3, const ReportsHomeScreen());
+        return _buildShellGuarded(
+          3,
+          const ReportsHomeScreen(),
+          allowedRoles: const ['admin', 'superadmin'],
+        );
       case settings:
-        return _buildShell(4, const SettingsScreen());
+        return _buildShellGuarded(
+          4,
+          const SettingsScreen(),
+          allowedRoles: const ['admin', 'superadmin'],
+        );
       case categories:
         return _build(const CategoryListScreen());
       case itemAdd:
@@ -127,32 +141,70 @@ class AppRouter {
           ),
         );
       case returnsNew:
-        return _build(const ReturnScreen());
+        return _buildGuarded(
+          const ReturnScreen(),
+          allowedRoles: const ['admin', 'superadmin'],
+        );
       case returnsReplace:
-        return _build(const ReplaceScreen());
+        return _buildGuarded(
+          const ReplaceScreen(),
+          allowedRoles: const ['admin', 'superadmin'],
+        );
       case returnsHistory:
-        return _build(const ReturnHistoryScreen());
+        return _buildGuarded(
+          const ReturnHistoryScreen(),
+          allowedRoles: const ['admin', 'superadmin'],
+        );
       case udhaarDashboard:
-        return _buildShell(5, const UdhaarDashboardScreen());
+        return _buildShellGuarded(
+          5,
+          const UdhaarDashboardScreen(),
+          allowedRoles: const ['admin', 'superadmin'],
+        );
       case udhaarCustomer:
         final customerId = routeSettings.arguments as int;
-        return _build(CustomerLedgerScreen(customerId: customerId));
+        return _buildGuarded(
+          CustomerLedgerScreen(customerId: customerId),
+          allowedRoles: const ['admin', 'superadmin'],
+        );
       case udhaarCollect:
         final customerId = routeSettings.arguments as int;
-        return _build(CollectPaymentScreen(customerId: customerId));
+        return _buildGuarded(
+          CollectPaymentScreen(customerId: customerId),
+          allowedRoles: const ['admin', 'superadmin'],
+        );
       case udhaarFinal:
         final customerId = routeSettings.arguments as int;
-        return _build(FinalTotalScreen(customerId: customerId));
+        return _buildGuarded(
+          FinalTotalScreen(customerId: customerId),
+          allowedRoles: const ['admin', 'superadmin'],
+        );
       case plReport:
-        return _build(const PLReportScreen());
+        return _buildGuarded(
+          const PLReportScreen(),
+          allowedRoles: const ['admin', 'superadmin'],
+        );
       case dailyReport:
-        return _build(const DailyReportScreen());
+        return _buildGuarded(
+          const DailyReportScreen(),
+          allowedRoles: const ['admin', 'superadmin'],
+        );
       case khata:
-        return _build(const KhataScreen());
+        return _buildShellGuarded(
+          2,
+          const KhataScreen(),
+          allowedRoles: const ['admin', 'superadmin'],
+        );
       case addExpense:
-        return _build(const AddExpenseScreen());
+        return _buildGuarded(
+          const AddExpenseScreen(),
+          allowedRoles: const ['admin', 'superadmin'],
+        );
       case expenseList:
-        return _build(const ExpenseListScreen());
+        return _buildGuarded(
+          const ExpenseListScreen(),
+          allowedRoles: const ['admin', 'superadmin'],
+        );
       default:
         return _build(
           Scaffold(
@@ -174,7 +226,35 @@ class AppRouter {
     );
   }
 
+  static MaterialPageRoute<dynamic> _buildShellGuarded(
+    int index,
+    Widget child, {
+    required List<String> allowedRoles,
+  }) {
+    return MaterialPageRoute(
+      builder: (context) => RoleGuard(
+        allowedRoles: allowedRoles,
+        child: AppScaffold(
+          currentIndex: index,
+          onDestinationSelected: (i) {
+            Navigator.of(context).pushReplacementNamed(_mainRoutes[i]);
+          },
+          child: child,
+        ),
+      ),
+    );
+  }
+
   static MaterialPageRoute<dynamic> _build(Widget page) {
     return MaterialPageRoute(builder: (_) => page);
+  }
+
+  static MaterialPageRoute<dynamic> _buildGuarded(
+    Widget page, {
+    required List<String> allowedRoles,
+  }) {
+    return MaterialPageRoute(
+      builder: (context) => RoleGuard(allowedRoles: allowedRoles, child: page),
+    );
   }
 }
