@@ -191,6 +191,27 @@ class _ItemEditScreenState extends ConsumerState<ItemEditScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    final categoryAsync = ref.watch(categoryListProvider);
+    final categoryItems = categoryAsync.when(
+      data: (cats) => [
+        const DropdownMenuItem<int?>(value: null, child: Text('—')),
+        ...cats.map(
+          (c) => DropdownMenuItem<int?>(value: c.id, child: Text(c.nameGu)),
+        ),
+      ],
+      loading: () => [
+        const DropdownMenuItem<int?>(value: null, child: Text('—')),
+      ],
+      error: (_, __) => [
+        const DropdownMenuItem<int?>(value: null, child: Text('—')),
+      ],
+    );
+    final effectiveCategoryValue = categoryAsync.when(
+      data: (cats) => cats.any((c) => c.id == _categoryId) ? _categoryId : null,
+      loading: () => null,
+      error: (_, __) => null,
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -213,25 +234,9 @@ class _ItemEditScreenState extends ConsumerState<ItemEditScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<int?>(
-              initialValue: _categoryId,
+              value: effectiveCategoryValue,
               decoration: const InputDecoration(labelText: AppStrings.category),
-              items: [
-                const DropdownMenuItem(value: null, child: Text('—')),
-                ...ref
-                    .watch(categoryListProvider)
-                    .when(
-                      data: (cats) => cats
-                          .map(
-                            (c) => DropdownMenuItem<int?>(
-                              value: c.id,
-                              child: Text(c.nameGu),
-                            ),
-                          )
-                          .toList(),
-                      loading: () => [],
-                      error: (e, st) => [],
-                    ),
-              ],
+              items: categoryItems,
               onChanged: (v) => setState(() => _categoryId = v),
             ),
             const SizedBox(height: 16),

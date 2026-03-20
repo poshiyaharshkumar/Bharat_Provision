@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:sqflite/sqflite.dart' as sqflite;
 import 'package:sqflite_sqlcipher/sqflite.dart' as sqlcipher;
 
 import 'error_logger.dart';
@@ -65,6 +66,26 @@ class ErrorHandler {
         return 'DB_002';
       }
 
+      if (error is sqflite.DatabaseException ||
+          error is sqlcipher.DatabaseException) {
+        final msg = error.toString().toLowerCase();
+        if (msg.contains('wrong key') ||
+            msg.contains('file is encrypted') ||
+            msg.contains('malformed')) {
+          return 'DB_004';
+        }
+        if (msg.contains('integrity')) {
+          return 'DB_007';
+        }
+        if (msg.contains('database is locked') || msg.contains('busy')) {
+          return 'DB_001';
+        }
+        if (msg.contains('no such table') || msg.contains('syntax error')) {
+          return 'DB_002';
+        }
+        return 'DB_002';
+      }
+
       if (error is FileSystemException) {
         final msg = error.message.toLowerCase();
         if (msg.contains('no space') || msg.contains('disk full')) {
@@ -82,6 +103,10 @@ class ErrorHandler {
         if (msg.contains('negative')) {
           return 'CALC_002';
         }
+      }
+
+      if (error is AssertionError || error is FlutterError) {
+        return 'UI_001';
       }
 
       if (error is StateError) {

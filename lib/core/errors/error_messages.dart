@@ -301,6 +301,13 @@ class ErrorMessages {
     ),
 
     // Unknown errors
+    'UI_001': ErrorMessage(
+      code: 'UI_001',
+      category: ErrorCategory.validation,
+      gujarati: 'UI-boundary ભૂલ. કૃપા કરી ફરી પ્રયાસ કરો.',
+      technical: 'UI assertion or layout error',
+      isCritical: false,
+    ),
     'UNK_001': ErrorMessage(
       code: 'UNK_001',
       category: ErrorCategory.unknown,

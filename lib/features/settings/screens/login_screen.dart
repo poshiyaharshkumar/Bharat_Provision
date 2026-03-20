@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/auth/role_provider.dart';
 import '../providers/auth_provider.dart';
 import '../settings_providers.dart';
 import '../widgets/pin_numpad.dart';
@@ -88,6 +89,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             timeoutMinutes: sessionTimeoutMinutes,
             requirePinOnOpen: requirePinOnOpen,
           );
+
+      // Update role provider for role-aware routing and UI
+      ref.read(currentRoleProvider.notifier).state = _selectedRole!;
 
       // Navigate
       widget.onLoginSuccess(_selectedRole!);

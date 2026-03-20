@@ -204,7 +204,8 @@ class ReportRepository {
         day.day,
       ).toIso8601String().split('T').first;
       salesMap[key] =
-          (salesMap[key] ?? 0) + (row['total_amount'] as num?)?.toDouble() ?? 0;
+          (salesMap[key] ?? 0) +
+          ((row['total_amount'] as num?)?.toDouble() ?? 0);
     }
 
     final out = <DailySales>[];

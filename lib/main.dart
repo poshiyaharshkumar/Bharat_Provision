@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -26,26 +27,27 @@ import 'features/udhaar/udhaar_dashboard_screen.dart';
 final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  if (Platform.isWindows || Platform.isLinux) {
-    sqfliteFfiInit();
-  }
-
-  FlutterError.onError = (details) {
-    final appError = ErrorHandler.handle(
-      details.exception,
-      details.stack ?? StackTrace.current,
-      context: 'FlutterError.onError',
-    );
-
-    if (appError.isCritical) {
-      _showCriticalErrorOverlay(appError);
-    }
-  };
-
   runZonedGuarded(
-    () {
+    () async {
+      // Ensure the same zone is used for binding initialization + runApp.
+      WidgetsFlutterBinding.ensureInitialized();
+
+      if (Platform.isWindows || Platform.isLinux) {
+        sqfliteFfiInit();
+      }
+
+      FlutterError.onError = (details) {
+        final appError = ErrorHandler.handle(
+          details.exception,
+          details.stack ?? StackTrace.current,
+          context: 'FlutterError.onError',
+        );
+
+        if (appError.isCritical) {
+          _showCriticalErrorOverlay(appError);
+        }
+      };
+
       runApp(const ProviderScope(child: KiranaApp()));
     },
     (error, stack) {
@@ -144,9 +146,18 @@ class _KiranaAppState extends ConsumerState<KiranaApp> {
           child: child ?? const SizedBox.shrink(),
         );
       },
-      home: AuthGate(child: const _MainShell()),
+      home: AuthGate(child: _RootNavigator()),
       onGenerateRoute: AppRouter.onGenerateRoute,
     );
+  }
+}
+
+class _RootNavigator extends ConsumerWidget {
+  const _RootNavigator();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return const _MainShell();
   }
 }
 

@@ -1,4 +1,4 @@
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite/sqflite.dart' show Database, Transaction;
 import '../models/bill.dart';
 import '../models/bill_item.dart';
 import '../../core/database/transaction_helper.dart';
@@ -99,10 +99,7 @@ class BillService {
       if (e is BillException) {
         rethrow;
       }
-      throw BillException(
-        message: 'બીલ સેવ કરી શકાયું નથી: ${e.toString()}',
-        originalError: e,
-      );
+      throw BillException(message: 'બીલ સેવ કરી શકાયું નથી: ${e.toString()}');
     }
   }
 

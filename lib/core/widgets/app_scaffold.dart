@@ -44,8 +44,8 @@ class AppScaffold extends ConsumerWidget {
         body: Row(
           children: [
             NavigationRail(
-              extended: screenWidth > 800,
-              minExtendedWidth: 160,
+              extended: true,
+              minExtendedWidth: 200,
               selectedIndex: effectiveIndex,
               onDestinationSelected: onDestinationSelected,
               destinations: items
